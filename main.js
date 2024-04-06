@@ -8,17 +8,17 @@ doing the job just fine. Separated by sections based on functionality and physic
 in the corresponding HTML file.
 */
 
-import keyArray from "./selectorsKey.js";
+import { keyArray, htmlArray } from "./selectorsKey.js";
 
 let styleKey;
 let styleValue;
 let currentElement;
 let newChild;
+let htmlElement;
 let prevStyle;
 let allNodes = [];
 let totalNodes = 0;
 let printout = "Element Characteristics:\n";
-let valueArray = [];
 
 /////////////////////// setters ///////////////////////////////////
 const setStyleKey = (value) => {
@@ -39,6 +39,9 @@ const setAllNodes = (value) => {
 };
 const setOneNode = (value) => {
   allNodes.push(value);
+};
+const setHtmlElement = (value) => {
+  htmlElement = value;
 };
 const setNodesBlack = () => {
   let currentNodeColor;
@@ -118,6 +121,9 @@ const getPrevStyle = () => {
 const getPrintout = () => {
   return printout;
 };
+const getHtmlElement = () => {
+  return htmlElement;
+};
 
 /////////////////////// Generate ALL the CSS Selectors ///////////////////////
 const makeOptions = (select, optionsArray) => {
@@ -128,11 +134,13 @@ const makeOptions = (select, optionsArray) => {
   });
 };
 
-const addCSSSelectors = (select) => {
+const addSelectors = (select) => {
   if (select.id === "keyField") {
     makeOptions(select, keyArray);
   } else if (select.id === "valueField") {
     console.log(select);
+  } else if (select.id === "htmlField") {
+    makeOptions(select, htmlArray);
   }
 };
 
@@ -161,17 +169,12 @@ span_playground.appendChild(new_element);
 /* keyField
 This is the element that takes in the CSS Property name i.e. color, margin, padding, so on
 */
-/* let keyField = document.createElement("input");
-keyField.setAttribute("placeholder", "CSS Property");
-keyField.setAttribute("type", "text");
-keyField.addEventListener("input", (e) => updateStyleKey(e));
-span_properties.appendChild(keyField); */
 let keyField = document.createElement("select");
 keyField.setAttribute("id", "keyField");
 let defaultKeyOption = document.createElement("option");
 defaultKeyOption.textContent = "Select CSS Property";
 keyField.appendChild(defaultKeyOption);
-addCSSSelectors(keyField);
+addSelectors(keyField);
 keyField.addEventListener("change", (e) => updateStyleKey(e));
 span_properties.appendChild(keyField);
 
@@ -224,6 +227,18 @@ deleteChildButton.style.background = "indianred";
 deleteChildButton.style.color = "white";
 deleteChildButton.addEventListener("click", () => deleteChild(currentElement));
 span_childAddition.appendChild(deleteChildButton);
+
+/* htmlField
+Drop down of every single html element to choose from 
+*/
+let htmlField = document.createElement("select");
+htmlField.setAttribute("id", "htmlField");
+htmlField.addEventListener("change", (e) => setHtmlElement(e.target.value));
+let defaultHtmlOption = document.createElement("option");
+defaultHtmlOption.textContent = "Select HTML Element";
+htmlField.appendChild(defaultHtmlOption);
+addSelectors(htmlField);
+span_childAddition.appendChild(htmlField);
 
 /* childField
 Takes in plain text and sets it as a variable to be submitted as a new element in the DOM
@@ -308,38 +323,27 @@ var clearElementStyle = (element) => {
 };
 
 var addChild = (element, child) => {
-  print(`Inside addChild: `, v);
-  print(`Total nodes before: ${getTotalNodes()}`, v);
   increaseTotalNodes();
 
   print(`${element.textContent}`, v);
   print(`${child}`, v);
   let fragment = document.createElement("span");
-  if (
-    child[0] === "<" &&
-    child[child.length - 1] === ">" &&
-    child[1] !== " " &&
-    child[1] !== ">" &&
-    child.includes("/")
-  ) {
-    fragment.innerHTML = child;
-    fragment.setAttribute("data-id", getTotalNodes());
-    fragment.style.color = "black";
 
-    setOneNode(fragment);
-    print(`Total nodes after: ${getTotalNodes()}`, v);
+  fragment.innerHTML = `<${getHtmlElement()}> ${child} </${getHtmlElement()}>`;
+  fragment.setAttribute("data-id", getTotalNodes());
+  fragment.style.color = "black";
 
-    if (element) {
-      element.appendChild(fragment);
-    } else {
-      console.log("no element selected");
-    }
-    getCurrentElement().style.color = getPrevStyle();
-    setNodesBlack();
-    setCurrentElement("");
+  setOneNode(fragment);
+  print(`Total nodes after: ${getTotalNodes()}`, v);
+
+  if (element) {
+    element.appendChild(fragment);
   } else {
-    print(`You entered incomplete or incorrect html: ${child}`, v);
+    console.log("no element selected");
   }
+  getCurrentElement().style.color = getPrevStyle();
+  setNodesBlack();
+  setCurrentElement("");
 };
 
 var deleteChild = (element) => {
