@@ -8,7 +8,7 @@ doing the job just fine. Separated by sections based on functionality and physic
 in the corresponding HTML file.
 */
 
-import { keyArray, htmlArray } from "./selectorsKey.js";
+import { keyArray, htmlArray, cssValues } from "./selectorsKey.js";
 
 let styleKey;
 let styleValue;
@@ -19,6 +19,8 @@ let prevStyle;
 let allNodes = [];
 let totalNodes = 0;
 let printout = "Element Characteristics:\n";
+let choicesField;
+let valuePlaceholder = "CSS Value";
 
 /////////////////////// setters ///////////////////////////////////
 const setStyleKey = (value) => {
@@ -42,6 +44,22 @@ const setOneNode = (value) => {
 };
 const setHtmlElement = (value) => {
   htmlElement = value;
+};
+const setValuePlaceholder = (value) => {
+  valuePlaceholder = value;
+  if (value === "CSS Value") {
+    valueField.setAttribute("value", ``);
+    valueField.setAttribute("placeholder", `${value}`);
+  } else if (value.includes("<") && value.includes(">")) {
+    valueField.setAttribute("value", ``);
+    valueField.setAttribute(
+      "placeholder",
+      `enter something for ${valuePlaceholder}`
+    );
+  } else {
+    valueField.setAttribute("value", `${valuePlaceholder}`);
+    updateValueKey(valuePlaceholder);
+  }
 };
 const setNodesBlack = () => {
   let currentNodeColor;
@@ -124,9 +142,16 @@ const getPrintout = () => {
 const getHtmlElement = () => {
   return htmlElement;
 };
+const getValuePlaceholder = () => {
+  return valuePlaceholder;
+};
 
 /////////////////////// Generate ALL the CSS Selectors ///////////////////////
 const makeOptions = (select, optionsArray) => {
+  if (select.id === "choicesField") {
+    setValuePlaceholder(optionsArray[0]);
+    updateValueKey(optionsArray[0]);
+  }
   optionsArray.forEach((option) => {
     let newOption = document.createElement("option");
     newOption.textContent = option;
@@ -178,11 +203,24 @@ addSelectors(keyField);
 keyField.addEventListener("change", (e) => updateStyleKey(e));
 span_properties.appendChild(keyField);
 
+/* choicesField
+This is the element to display all possible options for the key selected
+*/
+choicesField = document.createElement("select");
+choicesField.setAttribute("id", "choicesField");
+choicesField.addEventListener("change", (e) =>
+  setValuePlaceholder(e.target.value)
+);
+let defaultChoicesOption = document.createElement("option");
+defaultChoicesOption.textContent = "choice";
+choicesField.appendChild(defaultChoicesOption);
+span_properties.appendChild(choicesField);
+
 /* valueField
 This is the element that takes in the CSS Property value to be assigned to the name
 */
 let valueField = document.createElement("input");
-valueField.setAttribute("placeholder", "CSS Value");
+valueField.setAttribute("placeholder", `${getValuePlaceholder()}`);
 valueField.setAttribute("type", "text");
 valueField.addEventListener("input", (e) => updateValueKey(e));
 span_properties.appendChild(valueField);
@@ -267,6 +305,11 @@ Sets the style key global variable
 */
 var updateStyleKey = (e) => {
   setStyleKey(e.target.value);
+  setValuePlaceholder("CSS Value");
+  while (choicesField.firstChild) {
+    choicesField.removeChild(choicesField.firstChild);
+  }
+  makeOptions(choicesField, cssValues[styleKey]);
   print(`Current style: ${getStyleKey()}`, v);
 };
 
@@ -275,7 +318,11 @@ e - event associated with event listener
 Sets the value key global variable
 */
 var updateValueKey = (e) => {
-  setStyleValue(e.target.value);
+  if (e.target) {
+    setStyleValue(e.target.value);
+  } else {
+    setStyleValue(e);
+  }
   print(`Current value: ${getStyleValue()}`, v);
 };
 
@@ -311,6 +358,7 @@ var updateNewChild = (e) => {
 var newStyle = (element, key, value) => {
   element.style[key] = value;
   console.log(element, key, value);
+  setCurrentElement("");
   updateDivPrintout();
 };
 
