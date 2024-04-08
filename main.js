@@ -224,14 +224,6 @@ valueField.setAttribute("placeholder", `${getValuePlaceholder()}`);
 valueField.setAttribute("type", "text");
 valueField.addEventListener("input", (e) => updateValueKey(e));
 span_properties.appendChild(valueField);
-/* let valueField = document.createElement("select");
-valueField.setAttribute("id", "valueField");
-let defaultValueOption = document.createElement("option");
-defaultValueOption.textContent = "Select CSS Value";
-valueField.appendChild(defaultValueOption);
-addCSSSelectors(valueField); */
-valueField.addEventListener("input", (e) => updateValueKey(e));
-span_properties.appendChild(valueField);
 
 /* submitButton
 Submits the CSS property key-value combination on the selected element
@@ -360,6 +352,7 @@ var newStyle = (element, key, value) => {
   console.log(element, key, value);
   setCurrentElement("");
   updateDivPrintout();
+  setNodesBlack();
 };
 
 var clearElementStyle = (element) => {
