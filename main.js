@@ -371,6 +371,7 @@ addStyleToElement(new_element_Object, "border", "solid");
 This is the element that takes in the CSS Property name i.e. color, margin, padding, so on
 */
 let keyField = document.createElement("select");
+keyField.style.width = "175px";
 keyField.setAttribute("id", "keyField");
 let defaultKeyOption = document.createElement("option");
 defaultKeyOption.textContent = "Select CSS Property";
@@ -383,6 +384,7 @@ span_properties.appendChild(keyField);
 This is the element to display all possible options for the key selected
 */
 choicesField = document.createElement("select");
+choicesField.style.width = "100px";
 choicesField.setAttribute("id", "choicesField");
 choicesField.addEventListener("change", (e) =>
   setValuePlaceholder(e.target.value)
@@ -396,6 +398,7 @@ span_properties.appendChild(choicesField);
 This is the element that takes in the CSS Property value to be assigned to the name
 */
 let valueField = document.createElement("input");
+valueField.style.width = "100px";
 valueField.setAttribute("id", "valueField");
 valueField.setAttribute("placeholder", `${getValuePlaceholder()}`);
 valueField.setAttribute("type", "text");
