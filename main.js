@@ -74,7 +74,6 @@ const setNodesBlack = () => {
       : (node.style.color = "white");
   });
   let currentNodeInArrayColor;
-  console.log("in all black");
   for (let i = 0; i < allNodes.length; i++) {
     currentNodeInArrayColor = allNodes[i].styleList.color;
     if (allNodes[i].styleList.color != "red") {
@@ -126,7 +125,9 @@ const getStyleValue = () => {
   return styleValue;
 };
 const getCurrentElement = () => {
-  return getOneNode(currentElement.dataset.id);
+  if (currentElement) {
+    return getOneNode(currentElement.dataset.id);
+  }
 };
 const getNewChild = () => {
   return newChild;
@@ -216,7 +217,6 @@ const updateStyleKey = (e) => {
     choicesField.removeChild(choicesField.firstChild);
   }
   makeOptions(choicesField, cssValues[styleKey]);
-  //print(`Current style: ${getStyleKey()}`, v);
 };
 
 /* updateValueKey
@@ -229,7 +229,6 @@ const updateValueKey = (e) => {
   } else {
     setStyleValue(e);
   }
-  //print(`Current value: ${getStyleValue()}`, v);
 };
 
 /* updateCurrentElement
@@ -238,7 +237,7 @@ const updateValueKey = (e) => {
   element to red so the user knows it was selected
   */
 const updateCurrentElement = (e) => {
-  console.log(allNodes);
+  e.stopPropagation();
   setCurrentElement(e.target);
   if (
     !getCurrentElement().styleList["color"] ||
@@ -246,11 +245,9 @@ const updateCurrentElement = (e) => {
   ) {
     setNodesBlack();
     setPrevStyle(e.target.style.color);
-    //getCurrentElement().styleList["color"] = "red"; //set the node in the array
-    addStyleToElement(getOneNode(currentElement.dataset.id), "color", "red");
+    addStyleToElement(getOneNode(currentElement.dataset.id), "color", "red"); //set the node in the array
     getCurrentElement().element.style.color = "red"; //set the actual element on the page
   } else {
-    //getCurrentElement().styleList["color"] = getPrevStyle();
     addStyleToElement(
       getOneNode(currentElement.dataset.id),
       "color",
@@ -259,32 +256,42 @@ const updateCurrentElement = (e) => {
     getCurrentElement().element.style.color = getPrevStyle();
     setCurrentElement("");
   }
-  //currentElement &&
-  //print(`Current Element:  ${getCurrentElement().element.textContent}`, v);
   updateDivPrintout();
 };
 
 const updateNewChild = (e) => {
   newChild = e.target.value;
-  print(`New Child: ${newChild}`, v);
 };
 
 const newStyle = (element, key, value) => {
-  element.style[key] = value; //sets the element on the page
-  getOneNode(currentElement.dataset.id).styleList[key] = value; //sets the corresponding node in the array
-  //console.log(element, key, value);
-  updateDivPrintout();
-  setNodesBlack();
-  setCurrentElement("");
+  if (element) {
+    element.style[key] = value; //sets the element on the page
+    getOneNode(currentElement.dataset.id).styleList[key] = value; //sets the corresponding node in the array
+    setNodesBlack();
+    setCurrentElement("");
+    updateDivPrintout();
+  }
 };
 
 const clearElementStyle = (element) => {
-  if (element) {
+  if (element && element.dataset.id !== "0") {
     element.style = "";
     element.style.color = "black";
-    currentElement = "";
+    setCurrentElement("");
     div_printout.textContent = getPrintout();
+    updateDivPrintout;
     getOneNode(element.dataset.id).styleList = { color: "black" };
+  } else {
+    element.style = "";
+    element.style.color = "black";
+    element.style.border = "solid";
+    setCurrentElement("");
+    div_printout.textContent = getPrintout();
+    updateDivPrintout();
+    getOneNode(element.dataset.id).styleList = {
+      color: "black",
+      border: "solid",
+    };
   }
 };
 
@@ -294,32 +301,30 @@ const clearElementStyle = (element) => {
   and set the textContent using their input instead. 
   */
 const addChild = (element, child) => {
-  increaseTotalNodes();
-
-  print(`${element.textContent}`, v);
-  print(`${child}`, v);
-  let fragment = document.createElement(getHtmlElement());
-  fragment.textContent = child;
-
-  //fragment.innerHTML = `<${getHtmlElement()}> ${child} </${getHtmlElement()}>`;
-  fragment.setAttribute("data-id", getTotalNodes());
-  fragment.style.color = "black";
-
-  let newChildNode = new newElementObject(fragment);
-  setOneNode(newChildNode);
-  addStyleToElement(newChildNode, "color", "black");
-  print(`Total nodes after: ${getTotalNodes()}`, v);
-
   if (element) {
+    if (getTotalNodes() === 0) {
+      new_element.textContent = "";
+    }
+    increaseTotalNodes();
+
+    let fragment = document.createElement(getHtmlElement());
+    fragment.textContent = child;
+
+    fragment.setAttribute("data-id", getTotalNodes());
+    fragment.style.color = "black";
+
+    let newChildNode = new newElementObject(fragment);
+    setOneNode(newChildNode);
+    addStyleToElement(newChildNode, "color", "black");
     element.appendChild(fragment);
+    getCurrentElement().element.style.color = getPrevStyle();
+    getCurrentElement().styleList["color"] = getPrevStyle();
+    setNodesBlack();
+    setCurrentElement("");
+    updateDivPrintout();
   } else {
     console.log("no element selected");
   }
-  getCurrentElement().element.style.color = getPrevStyle();
-  getCurrentElement().styleList["color"] = getPrevStyle();
-  setNodesBlack();
-  setCurrentElement("");
-  updateDivPrintout();
 };
 
 const deleteChild = (element) => {
@@ -350,13 +355,15 @@ let div_printout = document.querySelector("#printout");
 div_printout.textContent = getPrintout();
 
 let new_element = document.createElement("div");
-new_element.textContent = "Start Here - Click Me!";
+new_element.textContent = " ";
 new_element.setAttribute("data-id", 0);
+new_element.style.border = "solid";
 new_element.addEventListener("click", (e) => updateCurrentElement(e));
 span_playground.appendChild(new_element);
 let new_element_Object = new newElementObject(new_element);
 setOneNode(new_element_Object);
 addStyleToElement(new_element_Object, "color", "black");
+addStyleToElement(new_element_Object, "border", "solid");
 
 /////////////////////// CSS Property fields /////////////////////////
 
