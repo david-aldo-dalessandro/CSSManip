@@ -18,7 +18,7 @@ let htmlElement;
 let prevStyle;
 let allNodes = [];
 let totalNodes = 0;
-let printout = "Element Characteristics:\n";
+let printout = "Info:\n";
 let choicesField;
 let valuePlaceholder = "CSS Value";
 
@@ -56,9 +56,11 @@ const setValuePlaceholder = (value) => {
       "placeholder",
       `enter something for ${valuePlaceholder}`
     );
+    document.querySelector("#valueField").value = "";
   } else {
     valueField.setAttribute("value", `${valuePlaceholder}`);
     updateValueKey(valuePlaceholder);
+    document.querySelector("#valueField").value = valuePlaceholder;
   }
 };
 const setNodesBlack = () => {
@@ -71,9 +73,23 @@ const setNodesBlack = () => {
       ? (node.style.color = prevStyle)
       : (node.style.color = "white");
   });
+  let currentNodeInArrayColor;
+  console.log("in all black");
+  for (let i = 0; i < allNodes.length; i++) {
+    currentNodeInArrayColor = allNodes[i].styleList.color;
+    if (allNodes[i].styleList.color != "red") {
+      allNodes[i].styleList.color = currentNodeInArrayColor;
+    } else if (allNodes[i].styleList.color === "red") {
+      allNodes[i].styleList.color = prevStyle;
+    }
+  }
 };
+
 const removeOneNode = (value) => {
-  let modifiedArray = allNodes.filter((node) => node.dataset.id !== value);
+  console.log(value);
+  let modifiedArray = allNodes.filter(
+    (node) => node.element.dataset.id !== value
+  );
   allNodes = [...modifiedArray];
 };
 
@@ -87,24 +103,12 @@ const setPrevStyle = (value) => {
 
 const updateDivPrintout = () => {
   let newContent = "";
-  const regex = /\d/;
-  let style = getCurrentElement().style;
   if (currentElement) {
-    for (const prop in style) {
-      if (
-        style[prop] &&
-        !regex.test(prop) &&
-        prop !== "length" &&
-        !prop.includes("cssText") &&
-        prop !== "getPropertyPriority" &&
-        prop !== "getPropertyValue" &&
-        prop !== "item" &&
-        prop !== "removeProperty" &&
-        prop !== "setProperty"
-      ) {
-        console.log(prop, style[prop]);
-        newContent += `<br/><b>${prop}</b>:${style[prop]}`;
-      }
+    let node = getOneNode(getCurrentElement().element.dataset.id);
+    newContent =
+      "<br/>Element Type: <b>" + node.element.localName + "</b> <br/> ";
+    for (let style in node.styleList) {
+      newContent += `<b>${style}</b>:${node.styleList[style]}<br/>`;
     }
   }
   if (!newContent) {
@@ -122,7 +126,7 @@ const getStyleValue = () => {
   return styleValue;
 };
 const getCurrentElement = () => {
-  return currentElement;
+  return getOneNode(currentElement.dataset.id);
 };
 const getNewChild = () => {
   return newChild;
@@ -130,11 +134,18 @@ const getNewChild = () => {
 const getAllNodes = () => {
   return allNodes;
 };
+const getOneNode = (nodeId) => {
+  return allNodes.find((node) => node.element.dataset.id === nodeId);
+};
 const getTotalNodes = () => {
   return totalNodes;
 };
 const getPrevStyle = () => {
-  return prevStyle;
+  if (prevStyle === "") {
+    return "black";
+  } else {
+    return prevStyle;
+  }
 };
 const getPrintout = () => {
   return printout;
@@ -144,6 +155,30 @@ const getHtmlElement = () => {
 };
 const getValuePlaceholder = () => {
   return valuePlaceholder;
+};
+
+/////////////////////// Element Object Creation /////////////////////////
+
+/* newElementObject
+element - the HTML element to associate with this object
+Creates a new instance of an Element Object to hold the HTML element as well as
+its style object
+*/
+function newElementObject(element) {
+  this.element = element;
+  this.styleList = {};
+}
+
+/* addStyleToElement
+element - HTML element that is having its style updated
+key - CSS selector 
+value - value of the CSS Selector
+*/
+const addStyleToElement = (element, key, value) => {
+  let n = allNodes.find(
+    (node) => node.element.dataset.id === element.element.dataset.id
+  );
+  n.styleList[key] = value;
 };
 
 /////////////////////// Generate ALL the CSS Selectors ///////////////////////
@@ -168,26 +203,160 @@ const addSelectors = (select) => {
     makeOptions(select, htmlArray);
   }
 };
+/////////////////////// Utility Functions ////////////////////////
+
+/* updateStyleKey
+e - event associated with event listener
+Sets the style key global variable
+*/
+const updateStyleKey = (e) => {
+  setStyleKey(e.target.value);
+  setValuePlaceholder("CSS Value");
+  while (choicesField.firstChild) {
+    choicesField.removeChild(choicesField.firstChild);
+  }
+  makeOptions(choicesField, cssValues[styleKey]);
+  //print(`Current style: ${getStyleKey()}`, v);
+};
+
+/* updateValueKey
+  e - event associated with event listener
+  Sets the value key global variable
+  */
+const updateValueKey = (e) => {
+  if (e.target) {
+    setStyleValue(e.target.value);
+  } else {
+    setStyleValue(e);
+  }
+  //print(`Current value: ${getStyleValue()}`, v);
+};
+
+/* updateCurrentElement
+  e - event associated with event listener
+  Sets the current element global variable and is responsible for changing the selected 
+  element to red so the user knows it was selected
+  */
+const updateCurrentElement = (e) => {
+  console.log(allNodes);
+  setCurrentElement(e.target);
+  if (
+    !getCurrentElement().styleList["color"] ||
+    getCurrentElement().styleList["color"] !== "red"
+  ) {
+    setNodesBlack();
+    setPrevStyle(e.target.style.color);
+    //getCurrentElement().styleList["color"] = "red"; //set the node in the array
+    addStyleToElement(getOneNode(currentElement.dataset.id), "color", "red");
+    getCurrentElement().element.style.color = "red"; //set the actual element on the page
+  } else {
+    //getCurrentElement().styleList["color"] = getPrevStyle();
+    addStyleToElement(
+      getOneNode(currentElement.dataset.id),
+      "color",
+      getPrevStyle()
+    );
+    getCurrentElement().element.style.color = getPrevStyle();
+    setCurrentElement("");
+  }
+  //currentElement &&
+  //print(`Current Element:  ${getCurrentElement().element.textContent}`, v);
+  updateDivPrintout();
+};
+
+const updateNewChild = (e) => {
+  newChild = e.target.value;
+  print(`New Child: ${newChild}`, v);
+};
+
+const newStyle = (element, key, value) => {
+  element.style[key] = value; //sets the element on the page
+  getOneNode(currentElement.dataset.id).styleList[key] = value; //sets the corresponding node in the array
+  //console.log(element, key, value);
+  updateDivPrintout();
+  setNodesBlack();
+  setCurrentElement("");
+};
+
+const clearElementStyle = (element) => {
+  if (element) {
+    element.style = "";
+    element.style.color = "black";
+    currentElement = "";
+    div_printout.textContent = getPrintout();
+    getOneNode(element.dataset.id).styleList = { color: "black" };
+  }
+};
+
+/*addChild
+  This originally took input for a child element and used a span to set innerHTML to the child
+  tags and content. Now I dynamically set the element using the element type that the user enters
+  and set the textContent using their input instead. 
+  */
+const addChild = (element, child) => {
+  increaseTotalNodes();
+
+  print(`${element.textContent}`, v);
+  print(`${child}`, v);
+  let fragment = document.createElement(getHtmlElement());
+  fragment.textContent = child;
+
+  //fragment.innerHTML = `<${getHtmlElement()}> ${child} </${getHtmlElement()}>`;
+  fragment.setAttribute("data-id", getTotalNodes());
+  fragment.style.color = "black";
+
+  let newChildNode = new newElementObject(fragment);
+  setOneNode(newChildNode);
+  addStyleToElement(newChildNode, "color", "black");
+  print(`Total nodes after: ${getTotalNodes()}`, v);
+
+  if (element) {
+    element.appendChild(fragment);
+  } else {
+    console.log("no element selected");
+  }
+  getCurrentElement().element.style.color = getPrevStyle();
+  getCurrentElement().styleList["color"] = getPrevStyle();
+  setNodesBlack();
+  setCurrentElement("");
+  updateDivPrintout();
+};
+
+const deleteChild = (element) => {
+  let value = element.getAttribute("data-id");
+  console.log(allNodes);
+  removeOneNode(value);
+
+  let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
+  nodeToRemove.remove();
+  console.log(allNodes);
+  setNodesBlack();
+  setCurrentElement("");
+  updateDivPrintout();
+};
 
 /////////////////////// DOM stuff ///////////////////////////////
 
 let v = true;
-var print = (log, v) => {
+const print = (log, v) => {
   return v && console.log(log);
 };
 
 let span_playground = document.querySelector("#playground");
 let span_properties = document.querySelector("#properties");
 let span_childAddition = document.querySelector("#childAddition");
-var div_printout = document.querySelector("#printout");
+let div_printout = document.querySelector("#printout");
 
 div_printout.textContent = getPrintout();
 
 let new_element = document.createElement("div");
 new_element.textContent = "Start Here - Click Me!";
+new_element.setAttribute("data-id", 0);
 new_element.addEventListener("click", (e) => updateCurrentElement(e));
-setOneNode(new_element);
 span_playground.appendChild(new_element);
+let new_element_Object = new newElementObject(new_element);
+setOneNode(new_element_Object);
+addStyleToElement(new_element_Object, "color", "black");
 
 /////////////////////// CSS Property fields /////////////////////////
 
@@ -220,6 +389,7 @@ span_properties.appendChild(choicesField);
 This is the element that takes in the CSS Property value to be assigned to the name
 */
 let valueField = document.createElement("input");
+valueField.setAttribute("id", "valueField");
 valueField.setAttribute("placeholder", `${getValuePlaceholder()}`);
 valueField.setAttribute("type", "text");
 valueField.addEventListener("input", (e) => updateValueKey(e));
@@ -288,110 +458,3 @@ addChildButton.addEventListener("click", () =>
   addChild(currentElement, newChild)
 );
 span_childAddition.appendChild(addChildButton);
-
-/////////////////////// Utility Functions ////////////////////////
-
-/* updateStyleKey
-e - event associated with event listener
-Sets the style key global variable
-*/
-var updateStyleKey = (e) => {
-  setStyleKey(e.target.value);
-  setValuePlaceholder("CSS Value");
-  while (choicesField.firstChild) {
-    choicesField.removeChild(choicesField.firstChild);
-  }
-  makeOptions(choicesField, cssValues[styleKey]);
-  print(`Current style: ${getStyleKey()}`, v);
-};
-
-/* updateValueKey
-e - event associated with event listener
-Sets the value key global variable
-*/
-var updateValueKey = (e) => {
-  if (e.target) {
-    setStyleValue(e.target.value);
-  } else {
-    setStyleValue(e);
-  }
-  print(`Current value: ${getStyleValue()}`, v);
-};
-
-/* updateCurrentElement
-e - event associated with event listener
-Sets the current element global variable and is responsible for changing the selected 
-element to red so the user knows it was selected
-*/
-var updateCurrentElement = (e) => {
-  currentElement = e.target;
-
-  if (
-    !getCurrentElement().style.color ||
-    getCurrentElement().style.color !== "red"
-  ) {
-    setNodesBlack();
-    setPrevStyle(e.target.style.color);
-    getCurrentElement().style.color = "red";
-  } else {
-    getCurrentElement().style.color = getPrevStyle();
-    setCurrentElement("");
-  }
-  currentElement &&
-    print(`Current Element:  ${getCurrentElement().textContent}`, v);
-  updateDivPrintout();
-};
-
-var updateNewChild = (e) => {
-  newChild = e.target.value;
-  print(`New Child: ${newChild}`, v);
-};
-
-var newStyle = (element, key, value) => {
-  element.style[key] = value;
-  console.log(element, key, value);
-  setCurrentElement("");
-  updateDivPrintout();
-  setNodesBlack();
-};
-
-var clearElementStyle = (element) => {
-  if (element) {
-    element.style = "";
-    currentElement = "";
-    div_printout.textContent = getPrintout();
-  }
-};
-
-var addChild = (element, child) => {
-  increaseTotalNodes();
-
-  print(`${element.textContent}`, v);
-  print(`${child}`, v);
-  let fragment = document.createElement("span");
-
-  fragment.innerHTML = `<${getHtmlElement()}> ${child} </${getHtmlElement()}>`;
-  fragment.setAttribute("data-id", getTotalNodes());
-  fragment.style.color = "black";
-
-  setOneNode(fragment);
-  print(`Total nodes after: ${getTotalNodes()}`, v);
-
-  if (element) {
-    element.appendChild(fragment);
-  } else {
-    console.log("no element selected");
-  }
-  getCurrentElement().style.color = getPrevStyle();
-  setNodesBlack();
-  setCurrentElement("");
-};
-
-var deleteChild = (element) => {
-  let value = element.parentNode.getAttribute("data-id");
-  console.log(allNodes);
-  removeOneNode(value);
-  let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
-  nodeToRemove.remove();
-  console.log(allNodes);
-};
