@@ -8,10 +8,18 @@ doing the job just fine. Separated by sections based on functionality and physic
 in the corresponding HTML file.
 */
 
-import { keyArray, htmlArray, cssValues } from "./selectorsKey.js";
+import {
+  keyArray,
+  htmlArray,
+  cssValues,
+  psuedoClassArray,
+} from "./selectorsKey.js";
 
 let styleKey;
 let styleValue;
+let psuedoClassKey;
+let psuedoClassStart;
+let psuedoClassEnd;
 let currentElement;
 let newChild;
 let htmlElement;
@@ -117,6 +125,22 @@ const updateDivPrintout = () => {
   }
 };
 
+const setPsuedoClassValue = (value) => {
+  psudeoClassValue = value;
+};
+
+const setPsuedoClassKey = (value) => {
+  psuedoClassKey = value;
+};
+
+const setPsuedoClassStart = (value) => {
+  psuedoClassStart = value;
+};
+
+const setPsuedoClassEnd = (value_) => {
+  psuedoClassEnd = value;
+};
+
 /////////////////////// getters ///////////////////////////////////
 const getStyleKey = () => {
   return styleKey;
@@ -156,6 +180,21 @@ const getHtmlElement = () => {
 };
 const getValuePlaceholder = () => {
   return valuePlaceholder;
+};
+const getPsuedoClassValue = () => {
+  return psudeoClassValue;
+};
+
+const getPsuedoClassKey = () => {
+  return psuedoClassKey;
+};
+
+const getPsuedoClassStart = () => {
+  return psuedoClassStart;
+};
+
+const getPsuedoClassEnd = () => {
+  return psuedoClassEnd;
 };
 
 /////////////////////// Element Object Creation /////////////////////////
@@ -202,6 +241,8 @@ const addSelectors = (select) => {
     console.log(select);
   } else if (select.id === "htmlField") {
     makeOptions(select, htmlArray);
+  } else if (select.id === "psuedoClassField") {
+    makeOptions(select, psuedoClassArray);
   }
 };
 /////////////////////// Utility Functions ////////////////////////
@@ -348,6 +389,7 @@ const print = (log, v) => {
 };
 
 let span_playground = document.querySelector("#playground");
+let span_psuedoClasses = document.querySelector("#psuedoClasses");
 let span_properties = document.querySelector("#properties");
 let span_childAddition = document.querySelector("#childAddition");
 let div_printout = document.querySelector("#printout");
@@ -366,6 +408,62 @@ addStyleToElement(new_element_Object, "color", "black");
 addStyleToElement(new_element_Object, "border", "solid");
 
 /////////////////////// CSS Property fields /////////////////////////
+
+/* psuedoClassField
+ */
+let psuedoClassField = document.createElement("select");
+psuedoClassField.setAttribute("id", "psuedoClassField");
+let defaultPsuedoClassFieldOption = document.createElement("option");
+defaultPsuedoClassFieldOption.textContent = "Select Class";
+psuedoClassField.appendChild(defaultPsuedoClassFieldOption);
+addSelectors(psuedoClassField);
+psuedoClassField.addEventListener("change", (e) => setPsuedoClassValue(e));
+span_psuedoClasses.appendChild(psuedoClassField);
+
+/* psudeoClassKeyField
+ */
+let psudeoClassKeyField = document.createElement("input");
+psudeoClassKeyField.style.width = "100px";
+psudeoClassKeyField.setAttribute("id", "psudeoClassKeyField");
+psudeoClassKeyField.setAttribute("placeholder", "CSS Property");
+psudeoClassKeyField.setAttribute("type", "text");
+psudeoClassKeyField.addEventListener("input", (e) =>
+  setPsuedoClassKey(e.target.value)
+);
+span_psuedoClasses.appendChild(psudeoClassKeyField);
+
+/* psuedoClassStartField
+ */
+let psuedoClassStartField = document.createElement("input");
+psuedoClassStartField.style.width = "100px";
+psuedoClassStartField.setAttribute("id", "psuedoClassStartField");
+psuedoClassStartField.setAttribute("placeholder", "Start Value");
+psuedoClassStartField.setAttribute("type", "text");
+psuedoClassStartField.addEventListener("input", (e) =>
+  setPsuedoClassStart(e.target.value)
+);
+span_psuedoClasses.appendChild(psuedoClassStartField);
+
+/* psuedoClassEndField
+ */
+let psuedoClassEndField = document.createElement("input");
+psuedoClassEndField.style.width = "100px";
+psuedoClassEndField.setAttribute("id", "psuedoClassEndField");
+psuedoClassEndField.setAttribute("placeholder", "End Value");
+psuedoClassEndField.setAttribute("type", "text");
+psuedoClassEndField.addEventListener("input", (e) =>
+  setPsuedoClassEnd(e.target.value)
+);
+span_psuedoClasses.appendChild(psuedoClassEndField);
+
+/* attachButton
+Submits the CSS property key-value combination on the selected element
+*/
+let attachButton = document.createElement("button");
+attachButton.textContent = "submit";
+attachButton.setAttribute("type", "submit");
+attachButton.addEventListener("click", () => console.log("attach class"));
+span_psuedoClasses.appendChild(attachButton);
 
 /* keyField
 This is the element that takes in the CSS Property name i.e. color, margin, padding, so on

@@ -3297,4 +3297,6 @@ const htmlArray = [
   "wbr",
 ];
 
-export { keyArray, htmlArray, cssValues };
+let psuedoClassArray = ["hover"];
+
+export { keyArray, htmlArray, cssValues, psuedoClassArray };
