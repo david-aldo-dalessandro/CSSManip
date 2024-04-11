@@ -17,6 +17,7 @@ import {
 
 let styleKey;
 let styleValue;
+let psuedoClassValue;
 let psuedoClassKey;
 let psuedoClassStart;
 let psuedoClassEnd;
@@ -126,18 +127,27 @@ const updateDivPrintout = () => {
 };
 
 const setPsuedoClassValue = (value) => {
-  psudeoClassValue = value;
+  psuedoClassValue = value;
 };
 
 const setPsuedoClassKey = (value) => {
   psuedoClassKey = value;
 };
 
+const setPsuedoClassKeyPlaceHolder = (value) => {
+  if (value !== "CSS Property") {
+    document.querySelector("#psudeoClassKeyField").value = value;
+  } else {
+    document.querySelector("#psudeoClassKeyField").value = "";
+    document.querySelector("#psudeoClassKeyField").placeholder = value;
+  }
+};
+
 const setPsuedoClassStart = (value) => {
   psuedoClassStart = value;
 };
 
-const setPsuedoClassEnd = (value_) => {
+const setPsuedoClassEnd = (value) => {
   psuedoClassEnd = value;
 };
 
@@ -182,7 +192,7 @@ const getValuePlaceholder = () => {
   return valuePlaceholder;
 };
 const getPsuedoClassValue = () => {
-  return psudeoClassValue;
+  return psuedoClassValue;
 };
 
 const getPsuedoClassKey = () => {
@@ -252,12 +262,24 @@ e - event associated with event listener
 Sets the style key global variable
 */
 const updateStyleKey = (e) => {
-  setStyleKey(e.target.value);
-  setValuePlaceholder("CSS Value");
-  while (choicesField.firstChild) {
-    choicesField.removeChild(choicesField.firstChild);
+  if (e.target.value === "Select CSS Property") {
+    setStyleKey("");
+    setPsuedoClassKey("");
+    setPsuedoClassKeyPlaceHolder("CSS Property");
+    setValuePlaceholder("CSS Value");
+    while (choicesField.firstChild) {
+      choicesField.removeChild(choicesField.firstChild);
+    }
+  } else {
+    setStyleKey(e.target.value);
+    setPsuedoClassKey(e.target.value);
+    setValuePlaceholder("CSS Value");
+    setPsuedoClassKeyPlaceHolder(e.target.value);
+    while (choicesField.firstChild) {
+      choicesField.removeChild(choicesField.firstChild);
+    }
+    makeOptions(choicesField, cssValues[styleKey]);
   }
-  makeOptions(choicesField, cssValues[styleKey]);
 };
 
 /* updateValueKey
@@ -381,6 +403,42 @@ const deleteChild = (element) => {
   updateDivPrintout();
 };
 
+const attachPsuedoClass = () => {
+  if (currentElement.dataset.id !== 0) {
+    if (getPsuedoClassValue() === "hover") {
+      if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
+        attachHover();
+      }
+    }
+  }
+};
+
+const changeStyleOnHover = (key, start, end) => {
+  currentElement.addEventListener("mouseover", (e) =>
+    addEndProperty(e, key, end)
+  );
+  currentElement.addEventListener("mouseout", (e) =>
+    addStartProperty(e, key, start)
+  );
+  newStyle(currentElement, key, start);
+};
+
+const addStartProperty = (e, key, start) => {
+  e.target.style[key] = start;
+  getOneNode(e.target.dataset.id).styleList[key] = start;
+  updateDivPrintout("");
+};
+
+const addEndProperty = (e, key, end) => {
+  e.target.style[key] = end;
+  getOneNode(e.target.dataset.id).styleList[key] = end;
+  updateDivPrintout("");
+};
+
+const attachHover = () => {
+  changeStyleOnHover(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
+
 /////////////////////// DOM stuff ///////////////////////////////
 
 let v = true;
@@ -417,7 +475,9 @@ let defaultPsuedoClassFieldOption = document.createElement("option");
 defaultPsuedoClassFieldOption.textContent = "Select Class";
 psuedoClassField.appendChild(defaultPsuedoClassFieldOption);
 addSelectors(psuedoClassField);
-psuedoClassField.addEventListener("change", (e) => setPsuedoClassValue(e));
+psuedoClassField.addEventListener("change", (e) =>
+  setPsuedoClassValue(e.target.value)
+);
 span_psuedoClasses.appendChild(psuedoClassField);
 
 /* psudeoClassKeyField
@@ -462,7 +522,7 @@ Submits the CSS property key-value combination on the selected element
 let attachButton = document.createElement("button");
 attachButton.textContent = "submit";
 attachButton.setAttribute("type", "submit");
-attachButton.addEventListener("click", () => console.log("attach class"));
+attachButton.addEventListener("click", () => attachPsuedoClass());
 span_psuedoClasses.appendChild(attachButton);
 
 /* keyField
