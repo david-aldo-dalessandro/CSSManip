@@ -30,6 +30,7 @@ let totalNodes = 0;
 let printout = "Info:\n";
 let choicesField;
 let valuePlaceholder = "CSS Value";
+let key, start, end;
 
 /////////////////////// setters ///////////////////////////////////
 const setStyleKey = (value) => {
@@ -340,6 +341,8 @@ const clearElementStyle = (element) => {
   if (element && element.dataset.id !== "0") {
     element.style = "";
     element.style.color = "black";
+    addStyleToElement(getOneNode(currentElement.dataset.id), "color", "black");
+    removePsuedoClass(element);
     setCurrentElement("");
     div_printout.textContent = getPrintout();
     updateDivPrintout;
@@ -405,6 +408,11 @@ const deleteChild = (element) => {
 
 const attachPsuedoClass = () => {
   if (currentElement.dataset.id !== 0) {
+    addStyleToElement(
+      getOneNode(currentElement.dataset.id),
+      "psudeo-class",
+      getPsuedoClassValue() + " on " + psuedoClassKey
+    );
     if (getPsuedoClassValue() === "hover") {
       if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
         attachHover();
@@ -413,30 +421,40 @@ const attachPsuedoClass = () => {
   }
 };
 
-const changeStyleOnHover = (key, start, end) => {
-  currentElement.addEventListener("mouseover", (e) =>
-    addEndProperty(e, key, end)
-  );
-  currentElement.addEventListener("mouseout", (e) =>
-    addStartProperty(e, key, start)
-  );
+const changeStyleOnHover = (Key, Start, End) => {
+  key = Key;
+  start = Start;
+  end = End;
+  currentElement.addEventListener("mouseover", addEndProperty);
+  currentElement.addEventListener("mouseout", addStartProperty);
   newStyle(currentElement, key, start);
 };
 
-const addStartProperty = (e, key, start) => {
-  e.target.style[key] = start;
-  getOneNode(e.target.dataset.id).styleList[key] = start;
+const addStartProperty = (event) => {
+  event.target.style[key] = start;
+  getOneNode(event.target.dataset.id).styleList[key] = start;
   updateDivPrintout("");
 };
 
-const addEndProperty = (e, key, end) => {
-  e.target.style[key] = end;
-  getOneNode(e.target.dataset.id).styleList[key] = end;
+const addEndProperty = (event) => {
+  event.target.style[key] = end;
+  getOneNode(event.target.dataset.id).styleList[key] = end;
   updateDivPrintout("");
 };
 
 const attachHover = () => {
   changeStyleOnHover(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
+
+const doNothing = () => {};
+
+const removePsuedoClass = (element) => {
+  let node = getOneNode(element.dataset.id);
+  if (node.styleList["psudeo-class"].includes("hover")) {
+    element.removeEventListener("mouseover", addEndProperty);
+    element.removeEventListener("mouseout", addStartProperty);
+  }
+  delete node.styleList["psudeo-class"];
 };
 
 /////////////////////// DOM stuff ///////////////////////////////
