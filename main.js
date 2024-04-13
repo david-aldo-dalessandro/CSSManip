@@ -334,6 +334,10 @@ const newStyle = (element, key, value) => {
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
+  } else {
+    setNodesBlack();
+    setCurrentElement("");
+    updateDivPrintout();
   }
 };
 
@@ -417,6 +421,10 @@ const attachPsuedoClass = () => {
       if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
         attachHover();
       }
+    } else if (getPsuedoClassValue() === "active") {
+      if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
+        attachActive();
+      }
     }
   }
 };
@@ -428,6 +436,15 @@ const changeStyleOnHover = (Key, Start, End) => {
   currentElement.addEventListener("mouseover", addEndProperty);
   currentElement.addEventListener("mouseout", addStartProperty);
   newStyle(currentElement, key, start);
+};
+
+const changeStyleOnActive = (Key, Start, End) => {
+  key = Key;
+  start = Start;
+  end = End;
+  currentElement.addEventListener("mousedown", addStartProperty);
+  currentElement.addEventListener("mouseup", addEndProperty);
+  newStyle();
 };
 
 const addStartProperty = (event) => {
@@ -446,13 +463,18 @@ const attachHover = () => {
   changeStyleOnHover(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
 
-const doNothing = () => {};
+const attachActive = () => {
+  changeStyleOnActive(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
 
 const removePsuedoClass = (element) => {
   let node = getOneNode(element.dataset.id);
   if (node.styleList["psudeo-class"].includes("hover")) {
     element.removeEventListener("mouseover", addEndProperty);
     element.removeEventListener("mouseout", addStartProperty);
+  } else if (node.styleList["psudeo-class"].includes("active")) {
+    element.removeEventListener("mousedown", addStartProperty);
+    element.removeEventListener("mouseup", addEndProperty);
   }
   delete node.styleList["psudeo-class"];
 };
