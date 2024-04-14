@@ -435,9 +435,10 @@ const addChild = (element, child) => {
     fragment.setAttribute("for", element.id);
 
     fragment.setAttribute("id", getHtmlElement() + element.dataset.id);
-    if (nextSibling) {
+    if (nextSibling && nextSibling.tagName !== "LABEL") {
+      console.log(nextSibling.tagName);
       parentElement.insertBefore(fragment, nextSibling);
-    } else {
+    } else if (nextSibling.tagName !== "LABEL") {
       parentElement.appendChild(fragment);
     }
     setNodesBlack();
