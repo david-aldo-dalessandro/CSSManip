@@ -107,7 +107,6 @@ const setNodesBlack = () => {
 };
 
 const removeOneNode = (value) => {
-  console.log(value);
   let modifiedArray = allNodes.filter(
     (node) => node.element.dataset.id !== value
   );
@@ -397,27 +396,50 @@ const clearElementStyle = (element) => {
   and set the textContent using their input instead. 
   */
 const addChild = (element, child) => {
-  if (element) {
+  if (element && getHtmlElement() !== "label") {
     if (getTotalNodes() === 0) {
       new_element.textContent = "";
     }
+
     increaseTotalNodes();
 
     let fragment = document.createElement(getHtmlElement());
     fragment.textContent = child;
     if (getHtmlElement() === "input") {
       fragment.setAttribute("type", getNewChildType());
+      fragment.setAttribute("name", `${element.tagName} ${element.dataset.id}`);
     }
 
     fragment.setAttribute("data-id", getTotalNodes());
+    fragment.setAttribute("id", getHtmlElement() + getTotalNodes());
     fragment.style.color = "black";
 
     let newChildNode = new newElementObject(fragment);
     setOneNode(newChildNode);
     addStyleToElement(newChildNode, "color", "black");
+
     element.appendChild(fragment);
+
     getCurrentElement().element.style.color = getPrevStyle();
     getCurrentElement().styleList["color"] = getPrevStyle();
+    setNodesBlack();
+    setCurrentElement("");
+    updateDivPrintout();
+  } else if (getHtmlElement() === "label") {
+    const parentElement = element.parentNode;
+    const nextSibling = element.nextSibling;
+
+    let fragment = document.createElement(getHtmlElement());
+    fragment.textContent = child;
+    fragment.setAttribute("type", getNewChildType());
+    fragment.setAttribute("for", element.id);
+
+    fragment.setAttribute("id", getHtmlElement() + element.dataset.id);
+    if (nextSibling) {
+      parentElement.insertBefore(fragment, nextSibling);
+    } else {
+      parentElement.appendChild(fragment);
+    }
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
@@ -427,13 +449,22 @@ const addChild = (element, child) => {
 };
 
 const deleteChild = (element) => {
-  if (element) {
+  if (element && element.dataset.id !== 0) {
     let value = element.getAttribute("data-id");
     console.log(allNodes);
     removeOneNode(value);
 
     let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
+    let nodeType = nodeToRemove.type;
     nodeToRemove.remove();
+    if (nodeType === "radio" || nodeType === "checkbox") {
+      let labelToRemove = document.querySelector(`#label${value}`);
+
+      if (labelToRemove) {
+        labelToRemove.remove();
+      }
+    }
+
     console.log(allNodes);
     setNodesBlack();
     setCurrentElement("");
