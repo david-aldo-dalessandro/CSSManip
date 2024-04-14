@@ -23,6 +23,7 @@ let psuedoClassStart;
 let psuedoClassEnd;
 let currentElement;
 let newChild;
+let newChildType;
 let htmlElement;
 let prevStyle;
 let allNodes = [];
@@ -30,6 +31,7 @@ let totalNodes = 0;
 let printout = "Info:\n";
 let choicesField;
 let valuePlaceholder = "CSS Value";
+let childFieldType;
 let key, start, end;
 
 /////////////////////// setters ///////////////////////////////////
@@ -53,6 +55,16 @@ const setOneNode = (value) => {
   allNodes.push(value);
 };
 const setHtmlElement = (value) => {
+  console.log(value === "input");
+  if (value === "input") {
+    childFieldType.disabled = false;
+    childFieldType.value = "";
+    childFieldType.setAttribute("placeholder", "enter input type");
+  } else {
+    childFieldType.disabled = true;
+    childFieldType.value = "";
+    childFieldType.setAttribute("placeholder", "");
+  }
   htmlElement = value;
 };
 const setValuePlaceholder = (value) => {
@@ -166,6 +178,9 @@ const getCurrentElement = () => {
 };
 const getNewChild = () => {
   return newChild;
+};
+const getNewChildType = () => {
+  return newChildType;
 };
 const getAllNodes = () => {
   return allNodes;
@@ -333,6 +348,10 @@ const updateNewChild = (e) => {
   newChild = e.target.value;
 };
 
+const updateNewChildType = (e) => {
+  newChildType = e.target.value;
+};
+
 const newStyle = (element, key, value) => {
   if (element) {
     element.style[key] = value; //sets the element on the page
@@ -386,6 +405,9 @@ const addChild = (element, child) => {
 
     let fragment = document.createElement(getHtmlElement());
     fragment.textContent = child;
+    if (getHtmlElement() === "input") {
+      fragment.setAttribute("type", getNewChildType());
+    }
 
     fragment.setAttribute("data-id", getTotalNodes());
     fragment.style.color = "black";
@@ -714,10 +736,22 @@ span_childAddition.appendChild(htmlField);
 Takes in plain text and sets it as a variable to be submitted as a new element in the DOM
 */
 let childField = document.createElement("input");
-childField.setAttribute("placeholder", "enter child node info");
+childField.style.width = "100px";
+childField.setAttribute("placeholder", "enter text");
 childField.setAttribute("type", "text");
 childField.addEventListener("input", (e) => updateNewChild(e));
 span_childAddition.appendChild(childField);
+
+/* childFieldType
+Takes in plain text and sets it as a variable to be submitted as a new element in the DOM
+*/
+childFieldType = document.createElement("input");
+childFieldType.style.width = "100px";
+childFieldType.setAttribute("disabled", true);
+childFieldType.setAttribute("placeholder", "");
+childFieldType.setAttribute("type", "text");
+childFieldType.addEventListener("input", (e) => updateNewChildType(e));
+span_childAddition.appendChild(childFieldType);
 
 /* addChildButton
 Sets the variable with the new HTML to a new element of the DOM
@@ -725,6 +759,6 @@ Sets the variable with the new HTML to a new element of the DOM
 let addChildButton = document.createElement("button");
 addChildButton.textContent = "Add Child";
 addChildButton.addEventListener("click", () =>
-  addChild(currentElement, newChild)
+  addChild(currentElement, newChild, newChildType)
 );
 span_childAddition.appendChild(addChildButton);
