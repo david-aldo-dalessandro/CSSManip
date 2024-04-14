@@ -137,10 +137,10 @@ const setPsuedoClassKey = (value) => {
 
 const setPsuedoClassKeyPlaceHolder = (value) => {
   if (value !== "CSS Property") {
-    document.querySelector("#psudeoClassKeyField").value = value;
+    document.querySelector("#psuedoClassKeyField").value = value;
   } else {
-    document.querySelector("#psudeoClassKeyField").value = "";
-    document.querySelector("#psudeoClassKeyField").placeholder = value;
+    document.querySelector("#psuedoClassKeyField").value = "";
+    document.querySelector("#psuedoClassKeyField").placeholder = value;
   }
 };
 
@@ -226,10 +226,17 @@ key - CSS selector
 value - value of the CSS Selector
 */
 const addStyleToElement = (element, key, value) => {
-  let n = allNodes.find(
+  let n = getOneNode(element.element.dataset.id);
+  /*   let n = allNodes.find(
     (node) => node.element.dataset.id === element.element.dataset.id
-  );
+  ); */
   n.styleList[key] = value;
+};
+
+const addEventPropertiesToElement = (element, psuedoClass, start, end) => {
+  let n = getOneNode(element.element.dataset.id);
+  n[psuedoClass] = { start: start, end: end };
+  n.psuedoClass = psuedoClass;
 };
 
 /////////////////////// Generate ALL the CSS Selectors ///////////////////////
@@ -345,8 +352,9 @@ const clearElementStyle = (element) => {
   if (element && element.dataset.id !== "0") {
     element.style = "";
     element.style.color = "black";
-    addStyleToElement(getOneNode(currentElement.dataset.id), "color", "black");
     removePsuedoClass(element);
+    addStyleToElement(getOneNode(currentElement.dataset.id), "color", "black");
+
     setCurrentElement("");
     div_printout.textContent = getPrintout();
     updateDivPrintout;
@@ -398,23 +406,25 @@ const addChild = (element, child) => {
 };
 
 const deleteChild = (element) => {
-  let value = element.getAttribute("data-id");
-  console.log(allNodes);
-  removeOneNode(value);
+  if (element) {
+    let value = element.getAttribute("data-id");
+    console.log(allNodes);
+    removeOneNode(value);
 
-  let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
-  nodeToRemove.remove();
-  console.log(allNodes);
-  setNodesBlack();
-  setCurrentElement("");
-  updateDivPrintout();
+    let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
+    nodeToRemove.remove();
+    console.log(allNodes);
+    setNodesBlack();
+    setCurrentElement("");
+    updateDivPrintout();
+  }
 };
 
 const attachPsuedoClass = () => {
   if (currentElement.dataset.id !== 0) {
     addStyleToElement(
       getOneNode(currentElement.dataset.id),
-      "psudeo-class",
+      "psuedo-class",
       getPsuedoClassValue() + " on " + psuedoClassKey
     );
     if (getPsuedoClassValue() === "hover") {
@@ -425,37 +435,56 @@ const attachPsuedoClass = () => {
       if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
         attachActive();
       }
+    } else if (getPsuedoClassValue() === "focus") {
+      if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
+        attachFocus();
+      }
     }
   }
 };
 
 const changeStyleOnHover = (Key, Start, End) => {
   key = Key;
-  start = Start;
-  end = End;
+  let node = getOneNode(currentElement.dataset.id);
+  addEventPropertiesToElement(node, "hover", Start, End);
   currentElement.addEventListener("mouseover", addEndProperty);
   currentElement.addEventListener("mouseout", addStartProperty);
-  newStyle(currentElement, key, start);
+  newStyle(node.element, Key, Start);
+  console.log(node);
 };
 
 const changeStyleOnActive = (Key, Start, End) => {
   key = Key;
-  start = Start;
-  end = End;
+  let node = getOneNode(currentElement.dataset.id);
+  addEventPropertiesToElement(node, "active", Start, End);
   currentElement.addEventListener("mousedown", addStartProperty);
   currentElement.addEventListener("mouseup", addEndProperty);
-  newStyle();
+  newStyle(node.element, Key, End);
+};
+
+const changeStyleOnFocus = (Key, Start, End) => {
+  key = Key;
+  let node = getOneNode(currentElement.dataset.id);
+  addEventPropertiesToElement(node, "focus", Start, End);
+  currentElement.addEventListener("focus", addStartProperty);
+  currentElement.addEventListener("blur", addEndProperty);
+  newStyle(currentElement, Key, End);
 };
 
 const addStartProperty = (event) => {
-  event.target.style[key] = start;
-  getOneNode(event.target.dataset.id).styleList[key] = start;
+  let n = getOneNode(event.target.dataset.id);
+  console.log(n);
+  event.target.style[key] = n[n.psuedoClass].start;
+  n.styleList[key] = n[n.psuedoClass].start;
   updateDivPrintout("");
 };
 
 const addEndProperty = (event) => {
-  event.target.style[key] = end;
-  getOneNode(event.target.dataset.id).styleList[key] = end;
+  let n = getOneNode(event.target.dataset.id);
+  console.log(n);
+  event.stopPropagation();
+  event.target.style[key] = n[n.psuedoClass].end;
+  n.styleList[key] = n[n.psuedoClass].end;
   updateDivPrintout("");
 };
 
@@ -467,16 +496,30 @@ const attachActive = () => {
   changeStyleOnActive(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
 
+const attachFocus = () => {
+  changeStyleOnFocus(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
+
 const removePsuedoClass = (element) => {
-  let node = getOneNode(element.dataset.id);
-  if (node.styleList["psudeo-class"].includes("hover")) {
-    element.removeEventListener("mouseover", addEndProperty);
-    element.removeEventListener("mouseout", addStartProperty);
-  } else if (node.styleList["psudeo-class"].includes("active")) {
-    element.removeEventListener("mousedown", addStartProperty);
-    element.removeEventListener("mouseup", addEndProperty);
+  if (element) {
+    let node = getOneNode(element.dataset.id);
+    if (node.styleList["psuedo-class"]) {
+      if (node.styleList["psuedo-class"].includes("hover")) {
+        element.removeEventListener("mouseover", addEndProperty);
+        element.removeEventListener("mouseout", addStartProperty);
+        delete node.hover;
+      } else if (node.styleList["psuedo-class"].includes("active")) {
+        element.removeEventListener("mousedown", addStartProperty);
+        element.removeEventListener("mouseup", addEndProperty);
+        delete node.active;
+      } else if (node.styleList["psuedo-class"].includes("focus")) {
+        element.removeEventListener("focus", addStartProperty);
+        element.removeEventListener("blur", addEndProperty);
+        delete node.focus;
+      }
+    }
+    delete node.styleList["psuedo-class"];
   }
-  delete node.styleList["psudeo-class"];
 };
 
 /////////////////////// DOM stuff ///////////////////////////////
@@ -520,17 +563,17 @@ psuedoClassField.addEventListener("change", (e) =>
 );
 span_psuedoClasses.appendChild(psuedoClassField);
 
-/* psudeoClassKeyField
+/* psuedoClassKeyField
  */
-let psudeoClassKeyField = document.createElement("input");
-psudeoClassKeyField.style.width = "100px";
-psudeoClassKeyField.setAttribute("id", "psudeoClassKeyField");
-psudeoClassKeyField.setAttribute("placeholder", "CSS Property");
-psudeoClassKeyField.setAttribute("type", "text");
-psudeoClassKeyField.addEventListener("input", (e) =>
+let psuedoClassKeyField = document.createElement("input");
+psuedoClassKeyField.style.width = "100px";
+psuedoClassKeyField.setAttribute("id", "psuedoClassKeyField");
+psuedoClassKeyField.setAttribute("placeholder", "CSS Property");
+psuedoClassKeyField.setAttribute("type", "text");
+psuedoClassKeyField.addEventListener("input", (e) =>
   setPsuedoClassKey(e.target.value)
 );
-span_psuedoClasses.appendChild(psudeoClassKeyField);
+span_psuedoClasses.appendChild(psuedoClassKeyField);
 
 /* psuedoClassStartField
  */
