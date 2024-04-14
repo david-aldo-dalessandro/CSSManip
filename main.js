@@ -233,10 +233,9 @@ const addStyleToElement = (element, key, value) => {
   n.styleList[key] = value;
 };
 
-const addEventPropertiesToElement = (element, psuedoClass, start, end) => {
+const addEventPropertiesToElement = (element, psuedoClass, key, start, end) => {
   let n = getOneNode(element.element.dataset.id);
-  n[psuedoClass] = { start: start, end: end };
-  n.psuedoClass = psuedoClass;
+  n[psuedoClass] = { key: key, start: start, end: end };
 };
 
 /////////////////////// Generate ALL the CSS Selectors ///////////////////////
@@ -446,17 +445,16 @@ const attachPsuedoClass = () => {
 const changeStyleOnHover = (Key, Start, End) => {
   key = Key;
   let node = getOneNode(currentElement.dataset.id);
-  addEventPropertiesToElement(node, "hover", Start, End);
+  addEventPropertiesToElement(node, "hover", Key, Start, End);
   currentElement.addEventListener("mouseover", addEndProperty);
   currentElement.addEventListener("mouseout", addStartProperty);
   newStyle(node.element, Key, Start);
-  console.log(node);
 };
 
 const changeStyleOnActive = (Key, Start, End) => {
   key = Key;
   let node = getOneNode(currentElement.dataset.id);
-  addEventPropertiesToElement(node, "active", Start, End);
+  addEventPropertiesToElement(node, "active", Key, Start, End);
   currentElement.addEventListener("mousedown", addStartProperty);
   currentElement.addEventListener("mouseup", addEndProperty);
   newStyle(node.element, Key, End);
@@ -465,7 +463,7 @@ const changeStyleOnActive = (Key, Start, End) => {
 const changeStyleOnFocus = (Key, Start, End) => {
   key = Key;
   let node = getOneNode(currentElement.dataset.id);
-  addEventPropertiesToElement(node, "focus", Start, End);
+  addEventPropertiesToElement(node, "focus", Key, Start, End);
   currentElement.addEventListener("focus", addStartProperty);
   currentElement.addEventListener("blur", addEndProperty);
   newStyle(currentElement, Key, End);
@@ -474,17 +472,36 @@ const changeStyleOnFocus = (Key, Start, End) => {
 const addStartProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
   console.log(n);
-  event.target.style[key] = n[n.psuedoClass].start;
-  n.styleList[key] = n[n.psuedoClass].start;
+  if (event.type === "mouseout") {
+    event.target.style[n.hover.key] = n.hover.start;
+    n.styleList[n.hover.key] = n.hover.start;
+  }
+  if (event.type === "mousedown") {
+    event.target.style[n.active.key] = n.active.start;
+    n.styleList[n.active.key] = n.active.start;
+  }
+  if (event.type === "focus") {
+    event.target.style[n.focus.key] = n.focus.start;
+    n.styleList[n.focus.key] = n.focus.start;
+  }
   updateDivPrintout("");
 };
 
 const addEndProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
-  console.log(n);
   event.stopPropagation();
-  event.target.style[key] = n[n.psuedoClass].end;
-  n.styleList[key] = n[n.psuedoClass].end;
+  if (event.type === "mouseover") {
+    event.target.style[n.hover.key] = n.hover.end;
+    n.styleList[n.hover.key] = n.hover.end;
+  }
+  if (event.type === "mouseup") {
+    event.target.style[n.active.key] = n.active.end;
+    n.styleList[n.active.key] = n.active.end;
+  }
+  if (event.type === "blur") {
+    event.target.style[n.focus.key] = n.focus.end;
+    n.styleList[n.focus.key] = n.focus.end;
+  }
   updateDivPrintout("");
 };
 
@@ -504,15 +521,17 @@ const removePsuedoClass = (element) => {
   if (element) {
     let node = getOneNode(element.dataset.id);
     if (node.styleList["psuedo-class"]) {
-      if (node.styleList["psuedo-class"].includes("hover")) {
+      if (node.hover) {
         element.removeEventListener("mouseover", addEndProperty);
         element.removeEventListener("mouseout", addStartProperty);
         delete node.hover;
-      } else if (node.styleList["psuedo-class"].includes("active")) {
+      }
+      if (node.active) {
         element.removeEventListener("mousedown", addStartProperty);
         element.removeEventListener("mouseup", addEndProperty);
         delete node.active;
-      } else if (node.styleList["psuedo-class"].includes("focus")) {
+      }
+      if (node.focus) {
         element.removeEventListener("focus", addStartProperty);
         element.removeEventListener("blur", addEndProperty);
         delete node.focus;
