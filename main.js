@@ -30,6 +30,7 @@ let allNodes = [];
 let totalNodes = 0;
 let printout = "Info:\n";
 let choicesField;
+let psuedoClassStartField;
 let valuePlaceholder = "CSS Value";
 let childFieldType;
 let key, start, end;
@@ -55,7 +56,6 @@ const setOneNode = (value) => {
   allNodes.push(value);
 };
 const setHtmlElement = (value) => {
-  console.log(value === "input");
   if (value === "input") {
     childFieldType.disabled = false;
     childFieldType.value = "";
@@ -140,6 +140,16 @@ const updateDivPrintout = () => {
 
 const setPsuedoClassValue = (value) => {
   psuedoClassValue = value;
+  if (value === "first-child") {
+    psuedoClassStartField.disabled = true;
+    psuedoClassStartField.placeholder = "";
+  } else if (value === "nth-child") {
+    psuedoClassStartField.disabled = false;
+    psuedoClassStartField.placeholder = "an + b";
+  } else {
+    psuedoClassStartField.disabled = false;
+    psuedoClassStartField.placeholder = "Start Value";
+  }
 };
 
 const setPsuedoClassKey = (value) => {
@@ -354,7 +364,7 @@ const updateNewChildType = (e) => {
 const newStyle = (element, key, value) => {
   if (element) {
     element.style[key] = value; //sets the element on the page
-    getOneNode(currentElement.dataset.id).styleList[key] = value; //sets the corresponding node in the array
+    getOneNode(element.dataset.id).styleList[key] = value; //sets the corresponding node in the array
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
@@ -377,6 +387,7 @@ const clearElementStyle = (element) => {
     updateDivPrintout;
     getOneNode(element.dataset.id).styleList = { color: "black" };
   } else {
+    removePsuedoClass(element);
     element.style = "";
     element.style.color = "black";
     element.style.border = "solid";
@@ -438,7 +449,7 @@ const addChild = (element, child) => {
     if (nextSibling && nextSibling.tagName !== "LABEL") {
       console.log(nextSibling.tagName);
       parentElement.insertBefore(fragment, nextSibling);
-    } else if (nextSibling.tagName !== "LABEL") {
+    } else if (!nextSibling) {
       parentElement.appendChild(fragment);
     }
     setNodesBlack();
@@ -450,7 +461,7 @@ const addChild = (element, child) => {
 };
 
 const deleteChild = (element) => {
-  if (element && element.dataset.id !== 0) {
+  if (element && element.dataset.id !== "0") {
     let value = element.getAttribute("data-id");
     console.log(allNodes);
     removeOneNode(value);
@@ -458,7 +469,7 @@ const deleteChild = (element) => {
     let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
     let nodeType = nodeToRemove.type;
     nodeToRemove.remove();
-    if (nodeType === "radio" || nodeType === "checkbox") {
+    if (document.querySelector(`#label${value}`)) {
       let labelToRemove = document.querySelector(`#label${value}`);
 
       if (labelToRemove) {
@@ -470,11 +481,20 @@ const deleteChild = (element) => {
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
+  } else {
+    let value = element.getAttribute("data-id");
+    if (document.querySelector(`#label${value}`)) {
+      let labelToRemove = document.querySelector(`#label${value}`);
+
+      if (labelToRemove) {
+        labelToRemove.remove();
+      }
+    }
   }
 };
 
 const attachPsuedoClass = () => {
-  if (currentElement.dataset.id !== 0) {
+  if (currentElement && currentElement.dataset.id !== 0) {
     addStyleToElement(
       getOneNode(currentElement.dataset.id),
       "psuedo-class",
@@ -491,6 +511,14 @@ const attachPsuedoClass = () => {
     } else if (getPsuedoClassValue() === "focus") {
       if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
         attachFocus();
+      }
+    } else if (getPsuedoClassValue() === "first-child") {
+      if (getPsuedoClassKey() && getPsuedoClassEnd()) {
+        attachFirstChild();
+      }
+    } else if (getPsuedoClassValue() === "nth-child") {
+      if (getPsuedoClassKey() && getPsuedoClassEnd()) {
+        attachNthChild();
       }
     }
   }
@@ -521,6 +549,174 @@ const changeStyleOnFocus = (Key, Start, End) => {
   currentElement.addEventListener("focus", addStartProperty);
   currentElement.addEventListener("blur", addEndProperty);
   newStyle(currentElement, Key, End);
+};
+
+const changeStyleOnFirstChild = (Key, Start, End) => {
+  key = Key;
+  let node = getOneNode(currentElement.dataset.id);
+  addEventPropertiesToElement(node, "firstChild", Key, Start, End);
+  newStyle(currentElement.children[0], Key, End);
+};
+
+const clearStyleOnNthChild = (Node, Formula) => {
+  let formula = Formula.split(" ").join("");
+  let form = [...formula];
+  const regex = /^(?:\d|[1-9]\d|99)$/;
+  let a;
+  let b;
+  let check;
+
+  if (form[0] === "n") {
+    check = true;
+    if (form.length === 3 && regex.test(form[2])) {
+      b = Number(form[2]);
+    } else if (
+      form.length === 4 &&
+      regex.test(form[2]) &&
+      regex.test(form[3])
+    ) {
+      console.log("setting b");
+      b = Number(form[2] + form[3]);
+    }
+  } else if (regex.test(form[0]) || regex.test(form[3])) {
+    check = true;
+    if (form.length > 1) {
+      a = Number(form[0]);
+    }
+    if (form.length > 2) {
+      b = Number(form[3]);
+    }
+  }
+
+  if (check) {
+    let j;
+    console.log("passed");
+    if (a && b) {
+      console.log(a, b);
+      for (let i = 0; i < Node.element.children.length; i++) {
+        j = a * i + b - 1;
+        console.log(i, j);
+        if (j < Node.element.children.length) {
+          Node.element.children[j].style = "";
+          Node.element.children[j].style.color = "black";
+        }
+      }
+    } else if (a && !b) {
+      console.log(a, b);
+      for (let i = 1; i < Node.element.children.length; i++) {
+        j = a * i - 1;
+        console.log(j);
+        if (j < Node.element.children.length) {
+          Node.element.children[j].style = "";
+          Node.element.children[j].style.color = "black";
+        }
+      }
+    } else if (!a && b) {
+      console.log(a, b);
+      for (let i = 0; i < Node.element.children.length; i++) {
+        j = b + i - 1;
+        console.log(j);
+        if (j < Node.element.children.length) {
+          Node.element.children[j].style = "";
+          Node.element.children[j].style.color = "black";
+        }
+      }
+    } else if (!a && !b) {
+      console.log(a, b);
+      for (let i = 0; i < Node.element.children.length; i++) {
+        console.log(i);
+        Node.element.children[i].style = "";
+        Node.element.children[i].style.color = "black";
+      }
+    }
+  }
+  setNodesBlack();
+  setCurrentElement("");
+  updateDivPrintout();
+};
+
+const changeStyleOnNthChild = (Key, Formula, End) => {
+  let formula = Formula.split(" ").join("");
+  let form = [...formula];
+  const regex = /^(?:\d|[1-9]\d|99)$/;
+  let a;
+  let b;
+  let check;
+
+  if (form[0] === "n") {
+    check = true;
+    if (form.length === 3 && regex.test(form[2])) {
+      b = Number(form[2]);
+    } else if (
+      form.length === 4 &&
+      regex.test(form[2]) &&
+      regex.test(form[3])
+    ) {
+      console.log("setting b");
+      b = Number(form[2] + form[3]);
+    }
+  } else if (regex.test(form[0]) || regex.test(form[3])) {
+    check = true;
+    if (form.length > 1) {
+      a = Number(form[0]);
+    }
+    if (form.length > 2) {
+      b = Number(form[3]);
+    }
+  }
+  key = Key;
+  let node = getOneNode(currentElement.dataset.id);
+
+  if (check) {
+    let j;
+    console.log("passed");
+    addEventPropertiesToElement(node, "nthChild", Key, Formula, End);
+    if (a && b) {
+      console.log(a, b);
+      for (let i = 0; i < currentElement.children.length; i++) {
+        j = a * i + b - 1;
+        console.log(i, j);
+        if (j < currentElement.children.length) {
+          currentElement.children[j].style[key] = End;
+          getOneNode(currentElement.children[j].dataset.id).styleList[key] =
+            End;
+        }
+      }
+    } else if (a && !b) {
+      console.log(a, b);
+      for (let i = 1; i < currentElement.children.length; i++) {
+        j = a * i - 1;
+        console.log(j);
+        if (j < currentElement.children.length) {
+          currentElement.children[j].style[key] = End;
+          getOneNode(currentElement.children[j].dataset.id).styleList[key] =
+            End;
+        }
+      }
+    } else if (!a && b) {
+      console.log(a, b);
+      for (let i = 0; i < currentElement.children.length; i++) {
+        j = b + i - 1;
+        console.log(j);
+        if (j < currentElement.children.length) {
+          currentElement.children[j].style[key] = End;
+          getOneNode(currentElement.children[j].dataset.id).styleList[key] =
+            End;
+        }
+      }
+    } else if (!a && !b) {
+      console.log(a, b);
+      for (let i = 0; i < currentElement.children.length; i++) {
+        console.log(i);
+        currentElement.children[i].style[key] = End;
+        getOneNode(currentElement.children[i].dataset.id).styleList[key] = End;
+      }
+    }
+  }
+
+  setNodesBlack();
+  setCurrentElement("");
+  updateDivPrintout();
 };
 
 const addStartProperty = (event) => {
@@ -571,9 +767,18 @@ const attachFocus = () => {
   changeStyleOnFocus(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
 
+const attachFirstChild = () => {
+  changeStyleOnFirstChild(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
+
+const attachNthChild = () => {
+  changeStyleOnNthChild(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
+
 const removePsuedoClass = (element) => {
   if (element) {
     let node = getOneNode(element.dataset.id);
+    console.log(node);
     if (node.styleList["psuedo-class"]) {
       if (node.hover) {
         element.removeEventListener("mouseover", addEndProperty);
@@ -589,6 +794,15 @@ const removePsuedoClass = (element) => {
         element.removeEventListener("focus", addStartProperty);
         element.removeEventListener("blur", addEndProperty);
         delete node.focus;
+      }
+      if (node.firstChild) {
+        clearElementStyle(element.children[0]);
+        delete node.firstChild;
+      }
+      if (node.nthChild) {
+        let node = getOneNode(element.dataset.id);
+        clearStyleOnNthChild(node, node.nthChild.start);
+        delete node.nthChild;
       }
     }
     delete node.styleList["psuedo-class"];
@@ -650,8 +864,9 @@ span_psuedoClasses.appendChild(psuedoClassKeyField);
 
 /* psuedoClassStartField
  */
-let psuedoClassStartField = document.createElement("input");
+psuedoClassStartField = document.createElement("input");
 psuedoClassStartField.style.width = "100px";
+psuedoClassStartField.disabled = false;
 psuedoClassStartField.setAttribute("id", "psuedoClassStartField");
 psuedoClassStartField.setAttribute("placeholder", "Start Value");
 psuedoClassStartField.setAttribute("type", "text");
