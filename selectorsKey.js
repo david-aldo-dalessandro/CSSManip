@@ -3305,6 +3305,7 @@ let psuedoClassArray = [
   "last-child",
   "nth-child",
   "checked",
+  "disable/enable",
 ];
 
 export { keyArray, htmlArray, cssValues, psuedoClassArray };

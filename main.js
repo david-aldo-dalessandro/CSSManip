@@ -31,6 +31,8 @@ let totalNodes = 0;
 let printout = "Info:\n";
 let choicesField;
 let psuedoClassStartField;
+let psuedoClassEndField;
+let psuedoClassKeyField;
 let valuePlaceholder = "CSS Value";
 let childFieldType;
 let key;
@@ -147,14 +149,33 @@ const setPsuedoClassValue = (value) => {
     value === "last-child" ||
     value === "checked"
   ) {
+    psuedoClassKeyField.disabled = false;
+    psuedoClassKeyField.placeholder = "CSS Property";
     psuedoClassStartField.disabled = true;
     psuedoClassStartField.placeholder = "";
+    psuedoClassEndField.disabled = false;
+    psuedoClassEndField.placeholder = "End Value";
   } else if (value === "nth-child") {
+    psuedoClassKeyField.disabled = false;
+    psuedoClassKeyField.placeholder = "CSS Property";
     psuedoClassStartField.disabled = false;
     psuedoClassStartField.placeholder = "an + b";
+    psuedoClassEndField.disabled = false;
+    psuedoClassEndField.placeholder = "End Value";
+  } else if (value === "disable/enable") {
+    psuedoClassKeyField.disabled = true;
+    psuedoClassKeyField.placeholder = "";
+    psuedoClassStartField.disabled = true;
+    psuedoClassStartField.placeholder = "";
+    psuedoClassEndField.disabled = true;
+    psuedoClassEndField.placeholder = "";
   } else {
+    psuedoClassKeyField.disabled = false;
+    psuedoClassKeyField.placeholder = "CSS Property";
     psuedoClassStartField.disabled = false;
     psuedoClassStartField.placeholder = "Start Value";
+    psuedoClassEndField.disabled = false;
+    psuedoClassEndField.placeholder = "End Value";
   }
 };
 
@@ -544,6 +565,8 @@ const attachPsuedoClass = () => {
       if (getPsuedoClassKey() && getPsuedoClassEnd()) {
         attachNthChild();
       }
+    } else if (getPsuedoClassValue() === "disable/enable") {
+      attachDisableEnable();
     }
   } else if (getPsuedoClassValue() === "checked") {
     if (getPsuedoClassKey() && getPsuedoClassEnd()) {
@@ -790,6 +813,29 @@ const changeStyleOnChecked = (Key, End) => {
   }
 };
 
+const changeStyleOnDisableEnable = () => {
+  console.log(currentElement.parentNode.tagName);
+  if (currentElement.parentNode.tagName === "SPAN") {
+    console.log("it has a parent");
+    let spanner = currentElement.parentNode;
+    currentElement.parentNode.parentNode.appendChild(currentElement);
+    spanner.remove();
+  }
+
+  let disabledBox = document.createElement("span");
+  disabledBox.addEventListener("mouseover", (e) => {
+    for (let i = 0; i < e.target.children.length; i++) {
+      e.target.children[i].disabled = false;
+    }
+    e.target.style.border = "";
+  });
+  disabledBox.style.border = "solid";
+
+  currentElement.parentNode.appendChild(disabledBox);
+  disabledBox.appendChild(currentElement);
+  currentElement.disabled = true;
+};
+
 const addStartProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
   console.log(n);
@@ -852,6 +898,10 @@ const attachNthChild = () => {
 
 const attachChecked = () => {
   changeStyleOnChecked(psuedoClassKey, psuedoClassEnd);
+};
+
+const attachDisableEnable = () => {
+  changeStyleOnDisableEnable();
 };
 
 const removePsuedoClass = (element) => {
@@ -934,7 +984,7 @@ span_psuedoClasses.appendChild(psuedoClassField);
 
 /* psuedoClassKeyField
  */
-let psuedoClassKeyField = document.createElement("input");
+psuedoClassKeyField = document.createElement("input");
 psuedoClassKeyField.style.width = "100px";
 psuedoClassKeyField.setAttribute("id", "psuedoClassKeyField");
 psuedoClassKeyField.setAttribute("placeholder", "CSS Property");
@@ -959,7 +1009,7 @@ span_psuedoClasses.appendChild(psuedoClassStartField);
 
 /* psuedoClassEndField
  */
-let psuedoClassEndField = document.createElement("input");
+psuedoClassEndField = document.createElement("input");
 psuedoClassEndField.style.width = "100px";
 psuedoClassEndField.setAttribute("id", "psuedoClassEndField");
 psuedoClassEndField.setAttribute("placeholder", "End Value");
