@@ -140,7 +140,7 @@ const updateDivPrintout = () => {
 
 const setPsuedoClassValue = (value) => {
   psuedoClassValue = value;
-  if (value === "first-child") {
+  if (value === "first-child" || value === "last-child") {
     psuedoClassStartField.disabled = true;
     psuedoClassStartField.placeholder = "";
   } else if (value === "nth-child") {
@@ -516,6 +516,10 @@ const attachPsuedoClass = () => {
       if (getPsuedoClassKey() && getPsuedoClassEnd()) {
         attachFirstChild();
       }
+    } else if (getPsuedoClassValue() === "last-child") {
+      if (getPsuedoClassKey() && getPsuedoClassEnd()) {
+        attachLastChild();
+      }
     } else if (getPsuedoClassValue() === "nth-child") {
       if (getPsuedoClassKey() && getPsuedoClassEnd()) {
         attachNthChild();
@@ -556,6 +560,17 @@ const changeStyleOnFirstChild = (Key, Start, End) => {
   let node = getOneNode(currentElement.dataset.id);
   addEventPropertiesToElement(node, "firstChild", Key, Start, End);
   newStyle(currentElement.children[0], Key, End);
+};
+
+const changeStyleOnLastChild = (Key, Start, End) => {
+  key = Key;
+  let node = getOneNode(currentElement.dataset.id);
+  addEventPropertiesToElement(node, "lastChild", Key, Start, End);
+  newStyle(
+    currentElement.children[currentElement.children.length - 1],
+    Key,
+    End
+  );
 };
 
 const clearStyleOnNthChild = (Node, Formula) => {
@@ -771,6 +786,10 @@ const attachFirstChild = () => {
   changeStyleOnFirstChild(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
 
+const attachLastChild = () => {
+  changeStyleOnLastChild(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
+};
+
 const attachNthChild = () => {
   changeStyleOnNthChild(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
@@ -798,6 +817,10 @@ const removePsuedoClass = (element) => {
       if (node.firstChild) {
         clearElementStyle(element.children[0]);
         delete node.firstChild;
+      }
+      if (node.lastChild) {
+        clearElementStyle(element.children[element.children.length - 1]);
+        delete node.lastChild;
       }
       if (node.nthChild) {
         let node = getOneNode(element.dataset.id);
