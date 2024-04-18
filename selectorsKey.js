@@ -3304,6 +3304,7 @@ let psuedoClassArray = [
   "first-child",
   "last-child",
   "nth-child",
+  "checked",
 ];
 
 export { keyArray, htmlArray, cssValues, psuedoClassArray };

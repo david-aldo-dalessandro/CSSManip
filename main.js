@@ -33,7 +33,9 @@ let choicesField;
 let psuedoClassStartField;
 let valuePlaceholder = "CSS Value";
 let childFieldType;
-let key, start, end;
+let key;
+let checkedKey = [];
+let checkedEnd = [];
 
 /////////////////////// setters ///////////////////////////////////
 const setStyleKey = (value) => {
@@ -121,9 +123,9 @@ const setPrevStyle = (value) => {
   prevStyle = value;
 };
 
-const updateDivPrintout = () => {
+const updateDivPrintout = (element) => {
   let newContent = "";
-  if (currentElement) {
+  if (currentElement && !element) {
     let node = getOneNode(getCurrentElement().element.dataset.id);
     newContent =
       "<br/>Element Type: <b>" + node.element.localName + "</b> <br/> ";
@@ -131,7 +133,7 @@ const updateDivPrintout = () => {
       newContent += `<b>${style}</b>:${node.styleList[style]}<br/>`;
     }
   }
-  if (!newContent) {
+  if (!newContent || element) {
     div_printout.textContent = printout + "no inline styling on this element";
   } else {
     div_printout.innerHTML = printout + newContent;
@@ -140,7 +142,11 @@ const updateDivPrintout = () => {
 
 const setPsuedoClassValue = (value) => {
   psuedoClassValue = value;
-  if (value === "first-child" || value === "last-child") {
+  if (
+    value === "first-child" ||
+    value === "last-child" ||
+    value === "checked"
+  ) {
     psuedoClassStartField.disabled = true;
     psuedoClassStartField.placeholder = "";
   } else if (value === "nth-child") {
@@ -375,6 +381,16 @@ const newStyle = (element, key, value) => {
   }
 };
 
+const clearOneStyle = (element) => {
+  let node = getOneNode(element.dataset.id);
+  console.log(node);
+  for (let i = 0; i < checkedKey.length; i++) {
+    delete node.styleList[checkedKey[i]];
+    element.style[checkedKey[i]] = "";
+  }
+  //div_printout.textContent = printout + "no inline styling on this element";
+};
+
 const clearElementStyle = (element) => {
   if (element && element.dataset.id !== "0") {
     element.style = "";
@@ -424,6 +440,10 @@ const addChild = (element, child) => {
     fragment.setAttribute("data-id", getTotalNodes());
     fragment.setAttribute("id", getHtmlElement() + getTotalNodes());
     fragment.style.color = "black";
+
+    if (getNewChildType() === "checkbox" || getNewChildType() === "radio") {
+      fragment.addEventListener("change", (e) => setCheckedStyle(e));
+    }
 
     let newChildNode = new newElementObject(fragment);
     setOneNode(newChildNode);
@@ -525,6 +545,21 @@ const attachPsuedoClass = () => {
         attachNthChild();
       }
     }
+  } else if (getPsuedoClassValue() === "checked") {
+    if (getPsuedoClassKey() && getPsuedoClassEnd()) {
+      attachChecked();
+    }
+  }
+};
+
+const setCheckedStyle = (e) => {
+  if (e.target.checked) {
+    for (let i = 0; i < checkedEnd.length; i++) {
+      newStyle(e.target, checkedKey[i], checkedEnd[i]);
+    }
+  } else {
+    //clearElementStyle(e.target);
+    clearOneStyle(e.target);
   }
 };
 
@@ -734,6 +769,27 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
   updateDivPrintout();
 };
 
+const changeStyleOnChecked = (Key, End) => {
+  //we will need to select all the inputs after index 6 to account for the inputs that
+  //are part of the document but not added by the user.
+  checkedKey.push(Key);
+  checkedEnd.push(End);
+  let allInputs = document.querySelectorAll("input");
+  let allInputsArray = Array.from(allInputs);
+  if (allInputs.length > 6) {
+    let userInputs = allInputsArray.slice(6);
+    for (let i = 0; i < userInputs.length; i++) {
+      if (userInputs[i].checked === true) {
+        userInputs[i].style[Key] = End; //sets the element on the page
+        getOneNode(userInputs[i].dataset.id).styleList[Key] = End; //sets the corresponding node in the array
+      }
+    }
+    setNodesBlack();
+    setCurrentElement("");
+    updateDivPrintout();
+  }
+};
+
 const addStartProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
   console.log(n);
@@ -794,10 +850,13 @@ const attachNthChild = () => {
   changeStyleOnNthChild(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
 
+const attachChecked = () => {
+  changeStyleOnChecked(psuedoClassKey, psuedoClassEnd);
+};
+
 const removePsuedoClass = (element) => {
   if (element) {
     let node = getOneNode(element.dataset.id);
-    console.log(node);
     if (node.styleList["psuedo-class"]) {
       if (node.hover) {
         element.removeEventListener("mouseover", addEndProperty);
