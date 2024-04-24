@@ -126,7 +126,7 @@ const setPrevStyle = (value) => {
 };
 
 const updateDivPrintout = (element) => {
-  let newContent = "";
+  /*   let newContent = "";
   if (currentElement && !element) {
     let node = getOneNode(getCurrentElement().element.dataset.id);
     newContent =
@@ -139,6 +139,45 @@ const updateDivPrintout = (element) => {
     div_printout.textContent = printout + "no inline styling on this element";
   } else {
     div_printout.innerHTML = printout + newContent;
+  } */
+  let currentNode;
+  if (currentElement) {
+    currentNode = getOneNode(currentElement.dataset.id);
+    while (div_printout.firstChild) {
+      div_printout.removeChild(div_printout.firstChild);
+    }
+    div_printout.innerHTML = `Info: <br> <b>${currentElement.tagName.toLowerCase()} </b>`;
+    for (let style in currentNode.styleList) {
+      let newDiv = document.createElement("div");
+      newDiv.setAttribute("data-id", currentElement.dataset.id);
+      newDiv.setAttribute("data-key", style);
+      newDiv.setAttribute("data-value", currentNode.styleList[style]);
+      newDiv.addEventListener("click", (e) => removeThisOneStyle(e.target));
+      newDiv.textContent = `${style} : ${currentNode.styleList[style]}`;
+      div_printout.appendChild(newDiv);
+    }
+  } else {
+    div_printout.textContent = "Info:";
+  }
+};
+
+const removeThisOneStyle = (target) => {
+  console.log(target);
+  if (currentElement.dataset.id !== "0") {
+    let currentNode = getOneNode(target.dataset.id);
+    for (let style in currentNode.styleList) {
+      if (style === target.dataset.key) {
+        delete currentNode.styleList[style];
+        if (style.includes("psuedo")) {
+          removeOnePsuedoClass(currentElement, target.dataset.key);
+        }
+      }
+    }
+    currentElement.style = {};
+    updateDivPrintout();
+    for (let style in currentNode.styleList) {
+      currentElement.style[style] = currentNode.styleList[style];
+    }
   }
 };
 
@@ -448,14 +487,16 @@ const clearOneStyle = (element) => {
   //div_printout.textContent = printout + "no inline styling on this element";
 };
 
-const clearElementStyle = (element) => {
+const clearElementStyle = (element, clear) => {
   if (element && element.dataset.id !== "0") {
     element.style = "";
     element.style.color = "black";
     removePsuedoClass(element);
     addStyleToElement(getOneNode(currentElement.dataset.id), "color", "black");
 
-    setCurrentElement("");
+    if (!clear) {
+      setCurrentElement("");
+    }
     div_printout.textContent = getPrintout();
     updateDivPrintout;
     getOneNode(element.dataset.id).styleList = { color: "black" };
@@ -464,7 +505,9 @@ const clearElementStyle = (element) => {
     element.style = "";
     element.style.color = "black";
     element.style.border = "solid";
-    setCurrentElement("");
+    if (!clear) {
+      setCurrentElement("");
+    }
     div_printout.textContent = getPrintout();
     updateDivPrintout();
     getOneNode(element.dataset.id).styleList = {
@@ -578,8 +621,8 @@ const attachPsuedoClass = () => {
   if (currentElement && currentElement.dataset.id !== 0) {
     addStyleToElement(
       getOneNode(currentElement.dataset.id),
-      "psuedo-class",
-      getPsuedoClassValue() + " on " + psuedoClassKey
+      `psuedo-class ${getPsuedoClassValue()}`,
+      psuedoClassKey
     );
     if (getPsuedoClassValue() === "hover") {
       if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
@@ -671,7 +714,7 @@ const changeStyleOnLastChild = (Key, Start, End) => {
   );
 };
 
-const clearStyleOnNthChild = (Node, Formula) => {
+const clearStyleOnNthChild = (Node, Formula, clear) => {
   let formula = Formula.split(" ").join("");
   let form = [...formula];
   const regex = /^(?:\d|[1-9]\d|99)$/;
@@ -744,7 +787,9 @@ const clearStyleOnNthChild = (Node, Formula) => {
     }
   }
   setNodesBlack();
-  setCurrentElement("");
+  if (!clear) {
+    setCurrentElement("");
+  }
   updateDivPrintout();
 };
 
@@ -966,39 +1011,77 @@ const attachDisableEnable = () => {
   changeStyleOnDisableEnable();
 };
 
+const removeOnePsuedoClass = (element, psuedoClass) => {
+  console.log(element);
+  if (element) {
+    let node = getOneNode(element.dataset.id);
+    console.log(node);
+    if (psuedoClass.includes("hover")) {
+      element.removeEventListener("mouseover", addEndProperty);
+      element.removeEventListener("mouseout", addStartProperty);
+      delete node.hover;
+    }
+    if (psuedoClass.includes("active")) {
+      element.removeEventListener("mousedown", addStartProperty);
+      element.removeEventListener("mouseup", addEndProperty);
+      delete node.active;
+    }
+    if (psuedoClass.includes("focus")) {
+      element.removeEventListener("focus", addStartProperty);
+      element.removeEventListener("blur", addEndProperty);
+      delete node.focus;
+    }
+    if (psuedoClass.includes("first-child")) {
+      clearElementStyle(element.children[0], true);
+      delete node.firstChild;
+    }
+    if (psuedoClass.includes("last-child")) {
+      clearElementStyle(element.children[element.children.length - 1], true);
+      delete node.lastChild;
+    }
+    if (psuedoClass.includes("nth-child")) {
+      let node = getOneNode(element.dataset.id);
+      clearStyleOnNthChild(node, node.nthChild["0"].start, true);
+      delete node.nthChild;
+    }
+  }
+};
+
 const removePsuedoClass = (element) => {
   if (element) {
     let node = getOneNode(element.dataset.id);
-    if (node.styleList["psuedo-class"]) {
-      if (node.hover) {
-        element.removeEventListener("mouseover", addEndProperty);
-        element.removeEventListener("mouseout", addStartProperty);
-        delete node.hover;
-      }
-      if (node.active) {
-        element.removeEventListener("mousedown", addStartProperty);
-        element.removeEventListener("mouseup", addEndProperty);
-        delete node.active;
-      }
-      if (node.focus) {
-        element.removeEventListener("focus", addStartProperty);
-        element.removeEventListener("blur", addEndProperty);
-        delete node.focus;
-      }
-      if (node.firstChild) {
-        clearElementStyle(element.children[0]);
-        delete node.firstChild;
-      }
-      if (node.lastChild) {
-        clearElementStyle(element.children[element.children.length - 1]);
-        delete node.lastChild;
-      }
-      if (node.nthChild) {
-        let node = getOneNode(element.dataset.id);
-        clearStyleOnNthChild(node, node.nthChild.start);
-        delete node.nthChild;
-      }
+
+    if (node.hover) {
+      console.log("removing hover");
+      element.removeEventListener("mouseover", addEndProperty);
+      element.removeEventListener("mouseout", addStartProperty);
+      delete node.hover;
     }
+    if (node.active) {
+      console.log("removing active");
+      element.removeEventListener("mousedown", addStartProperty);
+      element.removeEventListener("mouseup", addEndProperty);
+      delete node.active;
+    }
+    if (node.focus) {
+      element.removeEventListener("focus", addStartProperty);
+      element.removeEventListener("blur", addEndProperty);
+      delete node.focus;
+    }
+    if (node.firstChild) {
+      clearElementStyle(element.children[0]);
+      delete node.firstChild;
+    }
+    if (node.lastChild) {
+      clearElementStyle(element.children[element.children.length - 1]);
+      delete node.lastChild;
+    }
+    if (node.nthChild) {
+      let node = getOneNode(element.dataset.id);
+      clearStyleOnNthChild(node, node.nthChild.start);
+      delete node.nthChild;
+    }
+
     delete node.styleList["psuedo-class"];
   }
 };
