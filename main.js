@@ -286,7 +286,35 @@ const addStyleToElement = (element, key, value) => {
 
 const addEventPropertiesToElement = (element, psuedoClass, key, start, end) => {
   let n = getOneNode(element.element.dataset.id);
-  n[psuedoClass] = { key: key, start: start, end: end };
+  //n[psuedoClass] = { key: key, start: start, end: end };
+  let length;
+  if (!n[psuedoClass]) {
+    n[psuedoClass] = {};
+    n[psuedoClass]["0"] = {};
+    length = 0;
+    n[psuedoClass][length][`key`] = key;
+    n[psuedoClass][length][`start`] = start;
+    n[psuedoClass][length][`end`] = end;
+  } else {
+    length = Object.keys(n[psuedoClass]).length;
+    let foundObject = Object.keys(n[psuedoClass]).find(
+      (element) => n[psuedoClass][element].key === key
+    );
+    let modifiedObjects = Object.keys(n[psuedoClass]).filter(
+      (element) => n[psuedoClass][element].key !== key
+    );
+    console.log(modifiedObjects);
+    if (!foundObject) {
+      n[psuedoClass][length] = {};
+      n[psuedoClass][length][`key`] = key;
+      n[psuedoClass][length][`start`] = start;
+      n[psuedoClass][length][`end`] = end;
+    } else {
+      n[psuedoClass][foundObject][`key`] = key;
+      n[psuedoClass][foundObject][`start`] = start;
+      n[psuedoClass][foundObject][`end`] = end;
+    }
+  }
 };
 
 /////////////////////// Generate ALL the CSS Selectors ///////////////////////
@@ -381,11 +409,19 @@ const updateCurrentElement = (e) => {
 };
 
 const updateNewChild = (e) => {
-  newChild = e.target.value;
+  if (e !== "") {
+    newChild = e.target.value;
+  } else {
+    newChild = e;
+  }
 };
 
 const updateNewChildType = (e) => {
-  newChildType = e.target.value;
+  if (e !== "") {
+    newChildType = e.target.value;
+  } else {
+    newChildType = e;
+  }
 };
 
 const newStyle = (element, key, value) => {
@@ -477,6 +513,8 @@ const addChild = (element, child) => {
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
+    //updateNewChild("");
+    updateNewChildType("");
   } else if (getHtmlElement() === "label") {
     const parentElement = element.parentNode;
     const nextSibling = element.nextSibling;
@@ -496,6 +534,8 @@ const addChild = (element, child) => {
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
+    //updateNewChild("");
+    updateNewChildType("");
   } else {
     console.log("no element selected");
   }
@@ -840,16 +880,28 @@ const addStartProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
   console.log(n);
   if (event.type === "mouseout") {
-    event.target.style[n.hover.key] = n.hover.start;
-    n.styleList[n.hover.key] = n.hover.start;
+    for (let entry in n.hover) {
+      event.target.style[n.hover[entry].key] = n.hover[entry].start;
+      n.styleList[n.hover[entry].key] = n.hover[entry].start;
+    }
+    /* event.target.style[n.hover.key] = n.hover.start;
+    n.styleList[n.hover.key] = n.hover.start; */
   }
   if (event.type === "mousedown") {
-    event.target.style[n.active.key] = n.active.start;
-    n.styleList[n.active.key] = n.active.start;
+    for (let entry in n.active) {
+      event.target.style[n.active[entry].key] = n.active[entry].start;
+      n.styleList[n.active[entry].key] = n.active[entry].start;
+    }
+    /*  event.target.style[n.active.key] = n.active.start;
+    n.styleList[n.active.key] = n.active.start; */
   }
   if (event.type === "focus") {
-    event.target.style[n.focus.key] = n.focus.start;
-    n.styleList[n.focus.key] = n.focus.start;
+    for (let entry in n.focus) {
+      event.target.style[n.focus[entry].key] = n.focus[entry].start;
+      n.styleList[n.focus[entry].key] = n.focus[entry].start;
+    }
+    /* event.target.style[n.focus.key] = n.focus.start;
+    n.styleList[n.focus.key] = n.focus.start; */
   }
   updateDivPrintout("");
 };
@@ -858,16 +910,26 @@ const addEndProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
   event.stopPropagation();
   if (event.type === "mouseover") {
-    event.target.style[n.hover.key] = n.hover.end;
-    n.styleList[n.hover.key] = n.hover.end;
+    for (let entry in n.hover) {
+      event.target.style[n.hover[entry].key] = n.hover[entry].end;
+      n.styleList[n.hover[entry].key] = n.hover[entry].end;
+    }
+    /* event.target.style[n.hover.key] = n.hover.end;
+    n.styleList[n.hover.key] = n.hover.end; */
   }
   if (event.type === "mouseup") {
-    event.target.style[n.active.key] = n.active.end;
-    n.styleList[n.active.key] = n.active.end;
+    for (let entry in n.active) {
+      event.target.style[n.active[entry].key] = n.active[entry].end;
+      n.styleList[n.active[entry].key] = n.active[entry].end;
+    }
   }
   if (event.type === "blur") {
-    event.target.style[n.focus.key] = n.focus.end;
-    n.styleList[n.focus.key] = n.focus.end;
+    for (let entry in n.focus) {
+      event.target.style[n.focus[entry].key] = n.focus[entry].end;
+      n.styleList[n.focus[entry].key] = n.focus[entry].end;
+    }
+    /*  event.target.style[n.focus.key] = n.focus.end;
+    n.styleList[n.focus.key] = n.focus.end; */
   }
   updateDivPrintout("");
 };
