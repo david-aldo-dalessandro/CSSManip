@@ -29,15 +29,16 @@ let prevStyle;
 let allNodes = [];
 let totalNodes = 0;
 let printout = "Info:\n";
+let valuePlaceholder = "CSS Value";
+let key;
+let checkedKey = [];
+let checkedEnd = [];
+//global fields
 let choicesField;
 let psuedoClassStartField;
 let psuedoClassEndField;
 let psuedoClassKeyField;
-let valuePlaceholder = "CSS Value";
 let childFieldType;
-let key;
-let checkedKey = [];
-let checkedEnd = [];
 
 /////////////////////// setters ///////////////////////////////////
 const setStyleKey = (value) => {
@@ -52,6 +53,9 @@ const setCurrentElement = (value) => {
 const setNewChild = (value) => {
   newChild = value;
 };
+const setNewChildType = (value) => {
+  newChildType = value;
+};
 
 const setAllNodes = (value) => {
   allNodes = [...value];
@@ -59,6 +63,11 @@ const setAllNodes = (value) => {
 const setOneNode = (value) => {
   allNodes.push(value);
 };
+/* setHTMLElement
+value - the type of element to be created
+If a user chooses to create an 'input' type element, then they will be given
+another field to allow them to describe the type of input (text, radio, checkbox)
+*/
 const setHtmlElement = (value) => {
   if (value === "input") {
     childFieldType.disabled = false;
@@ -71,6 +80,13 @@ const setHtmlElement = (value) => {
   }
   htmlElement = value;
 };
+/* setValuePlaceholder 
+value - string to set as the elements placeholder 
+Determines the placeholder of the element when the field is not in use
+and has been changed based on a selection made somewhere else 
+i.e. if a user selects a CSS Property then the placeholder will reflect 
+something relevant to that property 
+*/
 const setValuePlaceholder = (value) => {
   valuePlaceholder = value;
   if (value === "CSS Value") {
@@ -89,6 +105,15 @@ const setValuePlaceholder = (value) => {
     document.querySelector("#valueField").value = valuePlaceholder;
   }
 };
+
+/* setNodesBlack 
+When a user clicks an element on the screen, it must turn red to show it has been selected.
+However, that same element must turn back to black (or its original color) when another element 
+is selected. 
+This function selects every element on the page, and checks whether it falls within the area of the page 
+that it should apply (in the playground span)
+It iterates over both the elements, and their respective nodes.
+*/
 const setNodesBlack = () => {
   let currentNodeColor;
   document.querySelectorAll("*").forEach((node) => {
@@ -96,25 +121,25 @@ const setNodesBlack = () => {
     node.style.color !== "red" && node.textContent !== "Delete Child"
       ? (node.style.color = currentNodeColor)
       : node.style.color === "red" && node.textContent !== "Delete Child"
-      ? (node.style.color = prevStyle)
+      ? (node.style.color = getPrevStyle())
       : (node.style.color = "white");
   });
   let currentNodeInArrayColor;
-  for (let i = 0; i < allNodes.length; i++) {
-    currentNodeInArrayColor = allNodes[i].styleList.color;
-    if (allNodes[i].styleList.color != "red") {
-      allNodes[i].styleList.color = currentNodeInArrayColor;
-    } else if (allNodes[i].styleList.color === "red") {
-      allNodes[i].styleList.color = prevStyle;
+  for (let i = 0; i < getAllNodes().length; i++) {
+    currentNodeInArrayColor = getAllNodes()[i].styleList.color;
+    if (getAllNodes()[i].styleList.color != "red") {
+      getAllNodes()[i].styleList.color = currentNodeInArrayColor;
+    } else if (getAllNodes()[i].styleList.color === "red") {
+      getAllNodes()[i].styleList.color = getPrevStyle();
     }
   }
 };
 
 const removeOneNode = (value) => {
-  let modifiedArray = allNodes.filter(
+  let modifiedArray = getAllNodes().filter(
     (node) => node.element.dataset.id !== value
   );
-  allNodes = [...modifiedArray];
+  setAllNodes(modifiedArray);
 };
 
 const increaseTotalNodes = () => {
@@ -125,21 +150,18 @@ const setPrevStyle = (value) => {
   prevStyle = value;
 };
 
+/* updateDivPrintout
+element - can't remember why I put this as an argument, details TBD
+The printout is an element in the DOM by default and displays all the information about the currently selected
+item's style. 
+Each time a new element is selected, a style is added, or really anything happens to an element the 
+printout element needs to be updated. 
+The way this works is the currently selected element is used to find the related array entry corresponding to its styles
+and psuedoclass information. For each style and psuedoclass, a new HTML element is created and added to the DOM with its own
+event listener for if/when it is clicked.
+This allows the user to selectively remove styles of the current element from the info box.
+*/
 const updateDivPrintout = (element) => {
-  /*   let newContent = "";
-  if (currentElement && !element) {
-    let node = getOneNode(getCurrentElement().element.dataset.id);
-    newContent =
-      "<br/>Element Type: <b>" + node.element.localName + "</b> <br/> ";
-    for (let style in node.styleList) {
-      newContent += `<b>${style}</b>:${node.styleList[style]}<br/>`;
-    }
-  }
-  if (!newContent || element) {
-    div_printout.textContent = printout + "no inline styling on this element";
-  } else {
-    div_printout.innerHTML = printout + newContent;
-  } */
   let currentNode;
   if (currentElement) {
     currentNode = getOneNode(currentElement.dataset.id);
@@ -161,8 +183,15 @@ const updateDivPrintout = (element) => {
   }
 };
 
+/* removeThisOneStyle
+target - an event.target to have a single style removed 
+This works in conjunction with updateDivPrintout as the event listener applied to all the 
+divs created to display the styles and psuedoclasses. When they are clicked, 
+the corresponding node is found and both the style on the currentElement, which is an HTML element that 
+is selected on the page by the user, and then node related to its style and psuedoclass information are 
+ran against the exact style that was clicked. When a match is found, it is removed and the prinout is updated.
+*/
 const removeThisOneStyle = (target) => {
-  console.log(target);
   if (currentElement.dataset.id !== "0") {
     let currentNode = getOneNode(target.dataset.id);
     for (let style in currentNode.styleList) {
@@ -181,6 +210,11 @@ const removeThisOneStyle = (target) => {
   }
 };
 
+/* setPsuedoClassValue
+value - inforamtion from the field to update the psuedoClassValue global variable
+Depending on what the user picks from the corresponding dropdown, the respective input fields 
+will be updated with placeholders and have their values reset for the user's convenience.
+*/
 const setPsuedoClassValue = (value) => {
   psuedoClassValue = value;
   if (
@@ -323,9 +357,19 @@ const addStyleToElement = (element, key, value) => {
   n.styleList[key] = value;
 };
 
+/* addEventPropertiesToElement
+element - element to add the psuedoclass information to
+psuedoClass - class to add or modify (hover, active, so on)
+key - the CSS property to add/change
+start - the beginning value of the key
+end - the ending value of the key
+This function attaches the psuedoclass information to the element and its node in the array. 
+It is designed in such a way that if a class is selected twice for different CSS properties 
+(like hover on height and width) then the hover property of the node will be added once with multiple 
+objects representing all the different key/start/end entries for hover.
+*/
 const addEventPropertiesToElement = (element, psuedoClass, key, start, end) => {
   let n = getOneNode(element.element.dataset.id);
-  //n[psuedoClass] = { key: key, start: start, end: end };
   let length;
   if (!n[psuedoClass]) {
     n[psuedoClass] = {};
@@ -342,7 +386,6 @@ const addEventPropertiesToElement = (element, psuedoClass, key, start, end) => {
     let modifiedObjects = Object.keys(n[psuedoClass]).filter(
       (element) => n[psuedoClass][element].key !== key
     );
-    console.log(modifiedObjects);
     if (!foundObject) {
       n[psuedoClass][length] = {};
       n[psuedoClass][length][`key`] = key;
@@ -373,7 +416,6 @@ const addSelectors = (select) => {
   if (select.id === "keyField") {
     makeOptions(select, keyArray);
   } else if (select.id === "valueField") {
-    console.log(select);
   } else if (select.id === "htmlField") {
     makeOptions(select, htmlArray);
   } else if (select.id === "psuedoClassField") {
@@ -384,7 +426,8 @@ const addSelectors = (select) => {
 
 /* updateStyleKey
 e - event associated with event listener
-Sets the style key global variable
+Sets the style key global variable. Depending on the selection a related choices field
+is populated to give the user some initial idea of what to enter for their property selection.
 */
 const updateStyleKey = (e) => {
   if (e.target.value === "Select CSS Property") {
@@ -449,17 +492,17 @@ const updateCurrentElement = (e) => {
 
 const updateNewChild = (e) => {
   if (e !== "") {
-    newChild = e.target.value;
+    setNewChild(e.target.value);
   } else {
-    newChild = e;
+    setNewChild(e);
   }
 };
 
 const updateNewChildType = (e) => {
   if (e !== "") {
-    newChildType = e.target.value;
+    setNewChildType(e.target.value);
   } else {
-    newChildType = e;
+    setNewChildType(e);
   }
 };
 
@@ -479,7 +522,6 @@ const newStyle = (element, key, value) => {
 
 const clearOneStyle = (element) => {
   let node = getOneNode(element.dataset.id);
-  console.log(node);
   for (let i = 0; i < checkedKey.length; i++) {
     delete node.styleList[checkedKey[i]];
     element.style[checkedKey[i]] = "";
@@ -556,7 +598,6 @@ const addChild = (element, child) => {
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
-    //updateNewChild("");
     updateNewChildType("");
   } else if (getHtmlElement() === "label") {
     const parentElement = element.parentNode;
@@ -569,7 +610,6 @@ const addChild = (element, child) => {
 
     fragment.setAttribute("id", getHtmlElement() + element.dataset.id);
     if (nextSibling && nextSibling.tagName !== "LABEL") {
-      console.log(nextSibling.tagName);
       parentElement.insertBefore(fragment, nextSibling);
     } else if (!nextSibling) {
       parentElement.appendChild(fragment);
@@ -577,17 +617,15 @@ const addChild = (element, child) => {
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
-    //updateNewChild("");
     updateNewChildType("");
   } else {
-    console.log("no element selected");
   }
 };
 
 const deleteChild = (element) => {
   if (element && element.dataset.id !== "0") {
     let value = element.getAttribute("data-id");
-    console.log(allNodes);
+
     removeOneNode(value);
 
     let nodeToRemove = document.querySelector(`[data-id="${value}"]`);
@@ -601,7 +639,6 @@ const deleteChild = (element) => {
       }
     }
 
-    console.log(allNodes);
     setNodesBlack();
     setCurrentElement("");
     updateDivPrintout();
@@ -617,12 +654,19 @@ const deleteChild = (element) => {
   }
 };
 
+//////////////////////////////// PsuedoClass Work /////////////////////////////
+/* attachPsuedoClass
+This is the main function that is called when a psuedoclass is selected and submitted. 
+Based on the class that is selected, certain fields are made available for the user to enter 
+information to it, some choices require more or less information and these branch statements take 
+that into consideration when the 'submit' button is selected to apply the class.
+*/
 const attachPsuedoClass = () => {
   if (currentElement && currentElement.dataset.id !== 0) {
     addStyleToElement(
       getOneNode(currentElement.dataset.id),
       `psuedo-class ${getPsuedoClassValue()}`,
-      psuedoClassKey
+      getPsuedoClassKey()
     );
     if (getPsuedoClassValue() === "hover") {
       if (getPsuedoClassKey() && getPsuedoClassStart() && getPsuedoClassEnd()) {
@@ -651,24 +695,36 @@ const attachPsuedoClass = () => {
     } else if (getPsuedoClassValue() === "disable/enable") {
       attachDisableEnable();
     }
-  } else if (getPsuedoClassValue() === "checked") {
+  }
+  if (
+    (currentElement || !currentElement) &&
+    getPsuedoClassValue() === "checked"
+  ) {
     if (getPsuedoClassKey() && getPsuedoClassEnd()) {
       attachChecked();
     }
   }
 };
 
+/* setCheckedStyle
+e - event related to the checking or unchecking of an input
+Based on the checked status of the input, the function either cycles through the 
+saved keys and values for the checked inputs OR it clears the style on the target
+reverting it back to normal or pre-checked form.
+*/
 const setCheckedStyle = (e) => {
   if (e.target.checked) {
     for (let i = 0; i < checkedEnd.length; i++) {
       newStyle(e.target, checkedKey[i], checkedEnd[i]);
     }
   } else {
-    //clearElementStyle(e.target);
     clearOneStyle(e.target);
   }
 };
 
+//////////////////////////////// changeStyleOn*** /////////////////////
+/* Each of these functions takes in the CSS Property as the Key, the beginning and end values where applicable
+and then applies the event listeners for that specific psuedoclass it is mimicking */
 const changeStyleOnHover = (Key, Start, End) => {
   key = Key;
   let node = getOneNode(currentElement.dataset.id);
@@ -714,6 +770,14 @@ const changeStyleOnLastChild = (Key, Start, End) => {
   );
 };
 
+/* clearStyleOnNthChild
+Node - the parent element
+Formula - whatever the user entered to manifest the nthChild
+clear - whether or not the current element needs to be reset
+At this point in time, nthChild does not stack. So if the user enters multiple formulas then only
+the last formula will be used to clear the style. 
+It essentially reverses the application of the psuedoclass on the element and its corresponding node.
+*/
 const clearStyleOnNthChild = (Node, Formula, clear) => {
   let formula = Formula.split(" ").join("");
   let form = [...formula];
@@ -731,7 +795,6 @@ const clearStyleOnNthChild = (Node, Formula, clear) => {
       regex.test(form[2]) &&
       regex.test(form[3])
     ) {
-      console.log("setting b");
       b = Number(form[2] + form[3]);
     }
   } else if (regex.test(form[0]) || regex.test(form[3])) {
@@ -746,43 +809,54 @@ const clearStyleOnNthChild = (Node, Formula, clear) => {
 
   if (check) {
     let j;
-    console.log("passed");
+
     if (a && b) {
-      console.log(a, b);
       for (let i = 0; i < Node.element.children.length; i++) {
         j = a * i + b - 1;
-        console.log(i, j);
+
         if (j < Node.element.children.length) {
           Node.element.children[j].style = "";
+          getOneNode(Node.element.children[j].dataset.id).styleList = {};
           Node.element.children[j].style.color = "black";
+          getOneNode(Node.element.children[j].dataset.id).styleList = {
+            color: "black",
+          };
         }
       }
     } else if (a && !b) {
-      console.log(a, b);
       for (let i = 1; i < Node.element.children.length; i++) {
         j = a * i - 1;
-        console.log(j);
+
         if (j < Node.element.children.length) {
           Node.element.children[j].style = "";
           Node.element.children[j].style.color = "black";
+          getOneNode(Node.element.children[j].dataset.id).styleList = {};
+          getOneNode(Node.element.children[j].dataset.id).styleList = {
+            color: "black",
+          };
         }
       }
     } else if (!a && b) {
-      console.log(a, b);
       for (let i = 0; i < Node.element.children.length; i++) {
         j = b + i - 1;
-        console.log(j);
+
         if (j < Node.element.children.length) {
           Node.element.children[j].style = "";
           Node.element.children[j].style.color = "black";
+          getOneNode(Node.element.children[j].dataset.id).styleList = {};
+          getOneNode(Node.element.children[j].dataset.id).styleList = {
+            color: "black",
+          };
         }
       }
     } else if (!a && !b) {
-      console.log(a, b);
       for (let i = 0; i < Node.element.children.length; i++) {
-        console.log(i);
         Node.element.children[i].style = "";
         Node.element.children[i].style.color = "black";
+        getOneNode(Node.element.children[i].dataset.id).styleList = {};
+        getOneNode(Node.element.children[i].dataset.id).styleList = {
+          color: "black",
+        };
       }
     }
   }
@@ -793,6 +867,14 @@ const clearStyleOnNthChild = (Node, Formula, clear) => {
   updateDivPrintout();
 };
 
+/* changeStyleOnNthChild
+Node - the parent element
+Formula - whatever the user entered to manifest the nthChild
+End - value of the style to apply 
+Takes in the formula the users enters, parses it, leverages the parsed info to operate the for loop
+where the style is actually applied. 
+**Can be combined with clearing the style, and will be done in the future to condense the code
+ */
 const changeStyleOnNthChild = (Key, Formula, End) => {
   let formula = Formula.split(" ").join("");
   let form = [...formula];
@@ -810,7 +892,6 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
       regex.test(form[2]) &&
       regex.test(form[3])
     ) {
-      console.log("setting b");
       b = Number(form[2] + form[3]);
     }
   } else if (regex.test(form[0]) || regex.test(form[3])) {
@@ -827,13 +908,10 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
 
   if (check) {
     let j;
-    console.log("passed");
     addEventPropertiesToElement(node, "nthChild", Key, Formula, End);
     if (a && b) {
-      console.log(a, b);
       for (let i = 0; i < currentElement.children.length; i++) {
         j = a * i + b - 1;
-        console.log(i, j);
         if (j < currentElement.children.length) {
           currentElement.children[j].style[key] = End;
           getOneNode(currentElement.children[j].dataset.id).styleList[key] =
@@ -841,10 +919,8 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
         }
       }
     } else if (a && !b) {
-      console.log(a, b);
       for (let i = 1; i < currentElement.children.length; i++) {
         j = a * i - 1;
-        console.log(j);
         if (j < currentElement.children.length) {
           currentElement.children[j].style[key] = End;
           getOneNode(currentElement.children[j].dataset.id).styleList[key] =
@@ -852,10 +928,8 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
         }
       }
     } else if (!a && b) {
-      console.log(a, b);
       for (let i = 0; i < currentElement.children.length; i++) {
         j = b + i - 1;
-        console.log(j);
         if (j < currentElement.children.length) {
           currentElement.children[j].style[key] = End;
           getOneNode(currentElement.children[j].dataset.id).styleList[key] =
@@ -863,9 +937,7 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
         }
       }
     } else if (!a && !b) {
-      console.log(a, b);
       for (let i = 0; i < currentElement.children.length; i++) {
-        console.log(i);
         currentElement.children[i].style[key] = End;
         getOneNode(currentElement.children[i].dataset.id).styleList[key] = End;
       }
@@ -877,13 +949,31 @@ const changeStyleOnNthChild = (Key, Formula, End) => {
   updateDivPrintout();
 };
 
+/* changeStyleOnChecked
+Key - CSS Property to apply 
+End - value of the property to apply 
+Loops over all the inputs on the page, and after skipping the actual HTML elements, begins
+apply styles to the inputs that match checkboxes or radio buttons.
+*/
 const changeStyleOnChecked = (Key, End) => {
   //we will need to select all the inputs after index 6 to account for the inputs that
   //are part of the document but not added by the user.
+
+  //make sure there are no duplicate styles on checked
+  let indexOfFoundKey;
+  if (checkedKey.find((element) => element === Key)) {
+    indexOfFoundKey = checkedKey.indexOf(
+      checkedKey.find((element) => element === Key)
+    );
+    checkedKey.splice(indexOfFoundKey, 1);
+    checkedEnd.splice(indexOfFoundKey, 1);
+  }
   checkedKey.push(Key);
   checkedEnd.push(End);
+
   let allInputs = document.querySelectorAll("input");
   let allInputsArray = Array.from(allInputs);
+
   if (allInputs.length > 6) {
     let userInputs = allInputsArray.slice(6);
     for (let i = 0; i < userInputs.length; i++) {
@@ -898,10 +988,17 @@ const changeStyleOnChecked = (Key, End) => {
   }
 };
 
+/* changeStyleOnDisableEnable
+Keeping this is TBD. The current element that the user decides to disabled can be 
+disabled easily enough. However, when it comes to re-enabling it this function takes the prerequisite action
+to do so (as a disabled element has no active listeners).
+By putting the disabled element into a span with a border, and its own listener that re-enables its child and then deletes
+itself we can dynamically re-enable elements. 
+It is janky and messes with the order of the element in the DOM structure.
+Either needs to be modified to maintain element position, or removed entirely.
+*/
 const changeStyleOnDisableEnable = () => {
-  console.log(currentElement.parentNode.tagName);
   if (currentElement.parentNode.tagName === "SPAN") {
-    console.log("it has a parent");
     let spanner = currentElement.parentNode;
     currentElement.parentNode.parentNode.appendChild(currentElement);
     spanner.remove();
@@ -921,32 +1018,29 @@ const changeStyleOnDisableEnable = () => {
   currentElement.disabled = true;
 };
 
+//////////////////////////////// Starts and Ends //////////////////////
+/* these two functions use branch statements to determine which styles to add to the element it is attached to from the psuedoclass
+found on the elements node. 
+*/
 const addStartProperty = (event) => {
   let n = getOneNode(event.target.dataset.id);
-  console.log(n);
   if (event.type === "mouseout") {
     for (let entry in n.hover) {
       event.target.style[n.hover[entry].key] = n.hover[entry].start;
       n.styleList[n.hover[entry].key] = n.hover[entry].start;
     }
-    /* event.target.style[n.hover.key] = n.hover.start;
-    n.styleList[n.hover.key] = n.hover.start; */
   }
   if (event.type === "mousedown") {
     for (let entry in n.active) {
       event.target.style[n.active[entry].key] = n.active[entry].start;
       n.styleList[n.active[entry].key] = n.active[entry].start;
     }
-    /*  event.target.style[n.active.key] = n.active.start;
-    n.styleList[n.active.key] = n.active.start; */
   }
   if (event.type === "focus") {
     for (let entry in n.focus) {
       event.target.style[n.focus[entry].key] = n.focus[entry].start;
       n.styleList[n.focus[entry].key] = n.focus[entry].start;
     }
-    /* event.target.style[n.focus.key] = n.focus.start;
-    n.styleList[n.focus.key] = n.focus.start; */
   }
   updateDivPrintout("");
 };
@@ -959,8 +1053,6 @@ const addEndProperty = (event) => {
       event.target.style[n.hover[entry].key] = n.hover[entry].end;
       n.styleList[n.hover[entry].key] = n.hover[entry].end;
     }
-    /* event.target.style[n.hover.key] = n.hover.end;
-    n.styleList[n.hover.key] = n.hover.end; */
   }
   if (event.type === "mouseup") {
     for (let entry in n.active) {
@@ -973,12 +1065,13 @@ const addEndProperty = (event) => {
       event.target.style[n.focus[entry].key] = n.focus[entry].end;
       n.styleList[n.focus[entry].key] = n.focus[entry].end;
     }
-    /*  event.target.style[n.focus.key] = n.focus.end;
-    n.styleList[n.focus.key] = n.focus.end; */
   }
   updateDivPrintout("");
 };
 
+/////////////////////////////// attach functions /////////////////////////
+/* attachs the specific psuedoclass work functions
+ */
 const attachHover = () => {
   changeStyleOnHover(psuedoClassKey, psuedoClassStart, psuedoClassEnd);
 };
@@ -1011,11 +1104,15 @@ const attachDisableEnable = () => {
   changeStyleOnDisableEnable();
 };
 
+/*  removeOnePsuedoClass
+element - element to remove class from
+psuedoClass - specific class to remove 
+When the specific class is clicked in the div_printout it runs this function to see if 
+a psuedoclass is on the element, and then selectively removes it if a match is found.
+*/
 const removeOnePsuedoClass = (element, psuedoClass) => {
-  console.log(element);
   if (element) {
     let node = getOneNode(element.dataset.id);
-    console.log(node);
     if (psuedoClass.includes("hover")) {
       element.removeEventListener("mouseover", addEndProperty);
       element.removeEventListener("mouseout", addStartProperty);
@@ -1047,18 +1144,20 @@ const removeOnePsuedoClass = (element, psuedoClass) => {
   }
 };
 
+/* removePsuedoClass
+element - element to remove all psuedoclasses from
+This function removes every psuedoclass from the element. 
+*/
 const removePsuedoClass = (element) => {
   if (element) {
     let node = getOneNode(element.dataset.id);
 
     if (node.hover) {
-      console.log("removing hover");
       element.removeEventListener("mouseover", addEndProperty);
       element.removeEventListener("mouseout", addStartProperty);
       delete node.hover;
     }
     if (node.active) {
-      console.log("removing active");
       element.removeEventListener("mousedown", addStartProperty);
       element.removeEventListener("mouseup", addEndProperty);
       delete node.active;
@@ -1081,17 +1180,16 @@ const removePsuedoClass = (element) => {
       clearStyleOnNthChild(node, node.nthChild.start);
       delete node.nthChild;
     }
+    if (checkedEnd.length > 0) {
+      checkedEnd = [];
+      checkedKey = [];
+    }
 
     delete node.styleList["psuedo-class"];
   }
 };
 
 /////////////////////// DOM stuff ///////////////////////////////
-
-let v = true;
-const print = (log, v) => {
-  return v && console.log(log);
-};
 
 let span_playground = document.querySelector("#playground");
 let span_psuedoClasses = document.querySelector("#psuedoClasses");
